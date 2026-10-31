@@ -8,7 +8,7 @@ VSRC=..
 TARGET_ARCH=
 
 # Choose name of executable 
-PRODUCTBASE=$(VSRC)/simv_aes_run1
+PRODUCTBASE=$(VSRC)/simv
 
 PRODUCT=$(PRODUCTBASE)
 
@@ -39,7 +39,7 @@ STDLIB =
 STRIPFLAGS= 
 
 PRE_LDFLAGS= # Loader Flags
-LDFLAGS= -rdynamic  -Wl,-rpath='$$ORIGIN'/simv_aes_run1.daidir -Wl,-rpath=./simv_aes_run1.daidir -Wl,-rpath=/home/student/snps_tools_target/vcs/U-2023.03/linux64/lib -L/home/student/snps_tools_target/vcs/U-2023.03/linux64/lib 
+LDFLAGS= -rdynamic  -Wl,-rpath='$$ORIGIN'/simv.daidir -Wl,-rpath=./simv.daidir -Wl,-rpath=/home/student/snps_tools_target/vcs/U-2023.03/linux64/lib -L/home/student/snps_tools_target/vcs/U-2023.03/linux64/lib 
 # Picarchive Flags
 PICLDFLAGS= -Wl,-rpath-link=./ 
 PIC_LD=ld
@@ -104,6 +104,7 @@ clobber : clean
 picclean : 
 	rm -f _cuarc*.so _csrc*.so pre_vcsobj_*.so share_vcsobj_*.so
 	@rm -f $(PRODUCT).daidir/_[0-9]*_archive_*.so 2>/dev/null
+	@rm -f $(DPI_OBJS)
 
 product_clean_order : 
 	@$(MAKE) -f Makefile --no-print-directory picclean

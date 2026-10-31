@@ -1,0 +1,6 @@
+signal,output or input,size or width
+uart_rx,input,1
+uart_tx,output,1
+gpio_i,input,64
+gpio_o,output,64
+gpio_dir_o,output,64

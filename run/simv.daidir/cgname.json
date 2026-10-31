@@ -1,27 +1,21 @@
 {
+    "_vcs_DPI_package": [
+        "_vcs_DPI_package",
+        "uM9F1",
+        "module",
+        1
+    ],
     "std": [
         "std",
         "reYIK",
         "module",
-        7
-    ],
-    "axi_internal_fifo_0000": [
-        "axi_internal_fifo_0000",
-        "Bvfk1",
-        "module",
-        1
-    ],
-    "axi_internal_fifo_0001": [
-        "axi_internal_fifo_0001",
-        "jTQWg",
-        "module",
-        8
+        2
     ],
     "priority_encoder_0000": [
         "priority_encoder_0000",
         "VTikG",
         "module",
-        5
+        3
     ],
     "arbiter": [
         "arbiter",
@@ -29,28 +23,202 @@
         "module",
         4
     ],
-    "axi_interconnect_wrap_2x10": [
-        "axi_interconnect_wrap_2x10",
-        "YWHKd",
+    "axi_interconnect_wrap_2x5": [
+        "axi_interconnect_wrap_2x5",
+        "YyRwg",
         "module",
-        3
+        5
     ],
     "axi_to_axilite_bridge": [
         "axi_to_axilite_bridge",
         "y8gxe",
         "module",
-        2
+        6
     ],
-    "tb_soc_top": [
-        "tb_soc_top",
-        "ms9A6",
+    "axi_to_axilite_bridge_0000": [
+        "axi_to_axilite_bridge_0000",
+        "KLUDJ",
+        "module",
+        7
+    ],
+    "amba_axi_pkg": [
+        "amba_axi_pkg",
+        "BYK7a",
+        "module",
+        8
+    ],
+    "dma_utils_pkg": [
+        "dma_utils_pkg",
+        "r8LT4",
+        "module",
+        9
+    ],
+    "rggen_axi4lite_adapter_0000": [
+        "rggen_axi4lite_adapter_0000",
+        "w5KHT",
         "module",
         10
+    ],
+    "rggen_bit_field_0000": [
+        "rggen_bit_field_0000",
+        "aBNUw",
+        "module",
+        11
+    ],
+    "rggen_bit_field_0001": [
+        "rggen_bit_field_0001",
+        "R1CQM",
+        "module",
+        12
+    ],
+    "rggen_bit_field_0000_0000": [
+        "rggen_bit_field_0000_0000",
+        "ydkez",
+        "module",
+        13
+    ],
+    "rggen_bit_field_0000_0001": [
+        "rggen_bit_field_0000_0001",
+        "WMEv4",
+        "module",
+        14
+    ],
+    "rggen_bit_field_0001_0000": [
+        "rggen_bit_field_0001_0000",
+        "GPSqw",
+        "module",
+        15
+    ],
+    "rggen_bit_field_0001_0001": [
+        "rggen_bit_field_0001_0001",
+        "Jv9bI",
+        "module",
+        16
+    ],
+    "rggen_default_register": [
+        "rggen_default_register",
+        "VK1yv",
+        "module",
+        17
+    ],
+    "csr_dma_0000": [
+        "csr_dma_0000",
+        "hR9er",
+        "module",
+        18
+    ],
+    "dma_fifo": [
+        "dma_fifo",
+        "QtNCa",
+        "module",
+        19
+    ],
+    "dma_fifo_0000": [
+        "dma_fifo_0000",
+        "SPUSA",
+        "module",
+        20
+    ],
+    "dma_fifo_0001": [
+        "dma_fifo_0001",
+        "K5vB2",
+        "module",
+        21
+    ],
+    "dma_fifo_0002": [
+        "dma_fifo_0002",
+        "N3Px1",
+        "module",
+        22
+    ],
+    "dma_fsm": [
+        "dma_fsm",
+        "nLLCg",
+        "module",
+        23
+    ],
+    "dma_streamer": [
+        "dma_streamer",
+        "xfCt1",
+        "module",
+        24
+    ],
+    "dma_axi_top": [
+        "dma_axi_top",
+        "vNi1S",
+        "module",
+        25
+    ],
+    "aes_sbox": [
+        "aes_sbox",
+        "JNxBW",
+        "module",
+        26
+    ],
+    "aes_inv_sbox": [
+        "aes_inv_sbox",
+        "ELihF",
+        "module",
+        27
+    ],
+    "aes_key_expand_128": [
+        "aes_key_expand_128",
+        "caLQD",
+        "module",
+        28
+    ],
+    "aes_key_expand_256": [
+        "aes_key_expand_256",
+        "rJiPZ",
+        "module",
+        29
+    ],
+    "axi_internal_fifo_0000": [
+        "axi_internal_fifo_0000",
+        "Bvfk1",
+        "module",
+        30
+    ],
+    "axi_internal_fifo_0001": [
+        "axi_internal_fifo_0001",
+        "jTQWg",
+        "module",
+        31
+    ],
+    "axi_uart_top_0000": [
+        "axi_uart_top_0000",
+        "x5KIA",
+        "module",
+        32
+    ],
+    "axi_timer_top": [
+        "axi_timer_top",
+        "W1xvm",
+        "module",
+        33
+    ],
+    "axi_gpio_top": [
+        "axi_gpio_top",
+        "G5R9Z",
+        "module",
+        34
+    ],
+    "axi_sha256_top": [
+        "axi_sha256_top",
+        "Na3Im",
+        "module",
+        35
+    ],
+    "tb_soc_c_test": [
+        "tb_soc_c_test",
+        "NMn1Q",
+        "module",
+        36
     ],
     "...MASTER...": [
         "SIM",
         "amcQw",
         "module",
-        6
+        37
     ]
 }

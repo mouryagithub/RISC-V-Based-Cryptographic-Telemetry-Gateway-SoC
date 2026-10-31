@@ -1,0 +1,5 @@
+signal,input or output,size
+uart_rx,input,1
+uart_tx,output,1
+uart_irq_o,output,1
+uart_clk,input,1

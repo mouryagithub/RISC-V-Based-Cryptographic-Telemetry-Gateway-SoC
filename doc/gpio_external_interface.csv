@@ -1,0 +1,4 @@
+signal,input or output,size
+gpio_i,input,64
+gpio_o,output,64
+gpio_dir_o,output,64

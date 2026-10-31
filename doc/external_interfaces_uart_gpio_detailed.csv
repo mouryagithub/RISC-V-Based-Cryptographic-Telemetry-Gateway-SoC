@@ -1,0 +1,12 @@
+signal,output or input,size or width,interface,description
+uart_rx,input,1,UART,UART serial asynchronous data ingress receive pin
+uart_tx,output,1,UART,UART serial asynchronous data egress transmit pin
+gpio_i,input,64,GPIO,64-bit parallel raw digital inputs from external package pins
+gpio_i[31:0],input,32,GPIO,GPIO Bank 0 raw digital inputs (pins 0 to 31)
+gpio_i[63:32],input,32,GPIO,GPIO Bank 1 raw digital inputs (pins 32 to 63)
+gpio_o,output,64,GPIO,64-bit parallel digital output drive lines to external package pins
+gpio_o[31:0],output,32,GPIO,GPIO Bank 0 digital output drive data (pins 0 to 31)
+gpio_o[63:32],output,32,GPIO,GPIO Bank 1 digital output drive data (pins 32 to 63)
+gpio_dir_o,output,64,GPIO,64-bit parallel tri-state output enable control (1=Output, 0=High-Z/Input)
+gpio_dir_o[31:0],output,32,GPIO,GPIO Bank 0 tri-state output enable controls (pins 0 to 31)
+gpio_dir_o[63:32],output,32,GPIO,GPIO Bank 1 tri-state output enable controls (pins 32 to 63)

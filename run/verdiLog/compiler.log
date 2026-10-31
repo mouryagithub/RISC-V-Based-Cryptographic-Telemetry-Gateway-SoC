@@ -1,4 +1,655 @@
 *design* DebussyLib (btIdent Verdi_U-2023.03-SP1)
-Command arguments:  -elab  /home/student/1602-23-735-154/project_dir/run/simv.daidir/kdb.elab++ 
-*design* DebussyLib (btIdent Verdi_U-2023.03-SP1)
-Total	0 error(s),   0 warning(s)
+Command arguments:
+    +define+verilog
+    -f /home/student/Documents/RISC-V-Based-Cryptographic-Telemetry-Gateway-SoC/run/run.f
+        -sverilog
+        +v2k
+        -debug_access+all
+*Warning* Unknown argument -debug_access+all
+
+        +define+FSDB
+        +incdir+../rtl/dma/inc
+        +incdir+../rtl/dma
+        +incdir+../rtl/uart
+        +incdir+../rtl/aes
+        +incdir+../c_test
+        +incdir+../tb
+        -CFLAGS
+*Warning* Unknown argument -CFLAGS
+
+        +incdir+../c_test
+        ../c_test/soc_test.c
+        ../rtl/interconnect/priority_encoder.v
+        ../rtl/interconnect/arbiter.v
+        ../rtl/interconnect/axi_interconnect.v
+        ../rtl/interconnect/axi_interconnect_wrap_2x5.v
+        ../rtl/interconnect/axi_to_axilite_bridge.v
+        ../rtl/dma/inc/amba_axi_pkg.sv
+        ../rtl/dma/inc/dma_utils_pkg.sv
+        ../rtl/dma/rggen_mux.v
+        ../rtl/dma/rggen_adapter_common.v
+        ../rtl/dma/rggen_address_decoder.v
+        ../rtl/dma/rggen_axi4lite_adapter.v
+        ../rtl/dma/rggen_axi4lite_skid_buffer.v
+        ../rtl/dma/rggen_bit_field.v
+        ../rtl/dma/rggen_default_register.v
+        ../rtl/dma/rggen_or_reducer.v
+        ../rtl/dma/rggen_register_common.v
+        ../rtl/dma/csr_dma.v
+        ../rtl/dma/dma_fifo.sv
+        ../rtl/dma/dma_fsm.sv
+        ../rtl/dma/dma_streamer.sv
+        ../rtl/dma/dma_axi_if.sv
+        ../rtl/dma/dma_func_wrapper.sv
+        ../rtl/dma/dma_axi_wrapper.sv
+        ../rtl/dma/dma_axi_top.sv
+        ../rtl/aes/aes_sbox.v
+        ../rtl/aes/aes_inv_sbox.v
+        ../rtl/aes/aes_rcon.v
+        ../rtl/aes/aes_key_expand_128.v
+        ../rtl/aes/aes_key_expand_256.v
+        ../rtl/aes/aes_cipher_top.v
+        ../rtl/aes/aes_inv_cipher_top.v
+        ../rtl/aes/aes_regfile.v
+        ../rtl/aes/aes_core_top.v
+        ../rtl/uart/uart_parity_bit_compute.v
+        ../rtl/uart/axi_internal_fifo.v
+        ../rtl/uart/uart_receiver.v
+        ../rtl/uart/uart_transmitter.v
+        ../rtl/uart/uart_controller.v
+        ../rtl/uart/axi_uart_top.v
+        ../rtl/timer/timer_core.sv
+        ../rtl/timer/axi_timer_top.v
+        ../rtl/gpio/axi_gpio_top.v
+        ../rtl/sha/sha256_k_constants.v
+        ../rtl/sha/sha256_w_mem.v
+        ../rtl/sha/sha256_core.v
+        ../rtl/sha/sha256.v
+        ../rtl/sha/axi_sha256_top.v
+        ../rtl/interconnect/soc_top.v
+        ../tb/tb_soc_c_test.sv
+
+
+*Error* Syntax error at #
+"../c_test/soc_test.c", 8: 
+
+*Error* Syntax error at #
+"../c_test/soc_test.c", 9: 
+
+*Error* Syntax error at #
+"../c_test/soc_test.c", 10: 
+
+*Error* Syntax error at #
+"../c_test/soc_test.c", 11: 
+
+*Error* Syntax error at #
+"../c_test/soc_test.c", 12: 
+
+*Error* Syntax error at #
+"../c_test/soc_test.c", 19: 
+
+*Error* Syntax error at if
+"../c_test/soc_test.c", 20: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 21: 
+
+*Error* Syntax error at g_pass_count
+"../c_test/soc_test.c", 22: 
+
+*Error* Syntax error at }
+"../c_test/soc_test.c", 23: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 24: 
+
+*Error* Syntax error at g_fail_count
+"../c_test/soc_test.c", 25: 
+
+*Error* Syntax error at }
+"../c_test/soc_test.c", 26: 
+
+*Error* Syntax error at }
+"../c_test/soc_test.c", 27: 
+
+*Error* Syntax error at #
+"../c_test/soc_test.c", 29: 
+
+*Error* Syntax error at if
+"../c_test/soc_test.c", 30: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 31: 
+
+*Error* Syntax error at g_pass_count
+"../c_test/soc_test.c", 32: 
+
+*Error* Syntax error at }
+"../c_test/soc_test.c", 33: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 34: 
+
+*Error* Syntax error at g_fail_count
+"../c_test/soc_test.c", 35: 
+
+*Error* Syntax error at }
+"../c_test/soc_test.c", 36: 
+
+*Error* Syntax error at }
+"../c_test/soc_test.c", 37: 
+
+*Error* Syntax error at (
+"../c_test/soc_test.c", 42: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 43: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 44: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 45: 
+
+*Warning* Deferred constant uint32_t was not initialized.
+"../c_test/soc_test.c", 47: 
+
+*Error* Syntax error at baud_div
+"../c_test/soc_test.c", 47: 
+
+*Error* Syntax error at uint8_t
+"../c_test/soc_test.c", 48: 
+
+*Error* Syntax error at uint32_t
+"../c_test/soc_test.c", 49: 
+
+*Error* Syntax error at soc_write32
+"../c_test/soc_test.c", 52: 
+
+*Error* Syntax error at soc_write32
+"../c_test/soc_test.c", 53: 
+
+*Error* Syntax error at soc_write32
+"../c_test/soc_test.c", 54: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 55: 
+
+*Error* Syntax error at soc_write32
+"../c_test/soc_test.c", 58: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 59: 
+
+*Error* Syntax error at g_pass_count
+"../c_test/soc_test.c", 60: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 63: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 64: 
+
+*Error* Syntax error at sv_uart_tx_loopback
+"../c_test/soc_test.c", 67: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 68: 
+
+*Error* Syntax error at sv_delay_cycles
+"../c_test/soc_test.c", 69: 
+
+*Error* Syntax error at sv_uart_tx_loopback
+"../c_test/soc_test.c", 72: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 73: 
+
+*Error* Syntax error at sv_delay_cycles
+"../c_test/soc_test.c", 74: 
+
+*Error* Syntax error at sv_uart_send_byte
+"../c_test/soc_test.c", 77: 
+
+*Error* Syntax error at sv_delay_cycles
+"../c_test/soc_test.c", 78: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 79: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 80: 
+
+*Error* Syntax error at sv_uart_send_byte
+"../c_test/soc_test.c", 83: 
+
+*Error* Syntax error at sv_delay_cycles
+"../c_test/soc_test.c", 84: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 85: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 86: 
+
+*Error* Syntax error at sv_uart_send_byte
+"../c_test/soc_test.c", 89: 
+
+*Error* Syntax error at sv_delay_cycles
+"../c_test/soc_test.c", 90: 
+
+*Error* Syntax error at uint32_t
+"../c_test/soc_test.c", 91: 
+
+*Error* Syntax error at sv_get_irqs
+"../c_test/soc_test.c", 92: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 93: 
+
+*Error* Syntax error at soc_read32
+"../c_test/soc_test.c", 96: 
+
+*Error* Syntax error at uint8_t
+"../c_test/soc_test.c", 99: 
+
+*Error* Syntax error at sv_uart_b2b_tx
+"../c_test/soc_test.c", 100: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 101: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 102: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 103: 
+
+*Error* Syntax error at return
+"../c_test/soc_test.c", 105: 
+
+*Error* Syntax error at }
+"../c_test/soc_test.c", 106: 
+
+*Error* Syntax error at (
+"../c_test/soc_test.c", 111: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 112: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 113: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 114: 
+
+*Error* Syntax error at uint32_t
+"../c_test/soc_test.c", 116: 
+
+*Error* Syntax error at uint32_t
+"../c_test/soc_test.c", 117: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 120: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 121: 
+
+*Error* Syntax error at soc_write32
+"../c_test/soc_test.c", 124: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 125: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 126: 
+
+*Error* Syntax error at soc_write32
+"../c_test/soc_test.c", 129: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 130: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 131: 
+
+*Error* Syntax error at sv_get_gpio_out
+"../c_test/soc_test.c", 133: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 134: 
+
+*Error* Syntax error at sv_set_gpio_in
+"../c_test/soc_test.c", 137: 
+
+*Error* Syntax error at sv_delay_cycles
+"../c_test/soc_test.c", 138: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 139: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 140: 
+
+*Error* Syntax error at soc_write32
+"../c_test/soc_test.c", 144: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 145: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 146: 
+
+*Error* Syntax error at soc_write32
+"../c_test/soc_test.c", 149: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 150: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 151: 
+
+*Error* Syntax error at soc_write32
+"../c_test/soc_test.c", 154: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 155: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 156: 
+
+*Error* Syntax error at return
+"../c_test/soc_test.c", 158: 
+
+*Error* Syntax error at }
+"../c_test/soc_test.c", 159: 
+
+*Error* Syntax error at (
+"../c_test/soc_test.c", 164: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 165: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 166: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 167: 
+
+*Error* Syntax error at uint32_t
+"../c_test/soc_test.c", 169: 
+
+*Error* Syntax error at soc_write32
+"../c_test/soc_test.c", 172: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 173: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 174: 
+
+*Error* Syntax error at soc_write32
+"../c_test/soc_test.c", 177: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 178: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 179: 
+
+*Error* Syntax error at soc_write32
+"../c_test/soc_test.c", 182: 
+
+*Error* Syntax error at soc_write32
+"../c_test/soc_test.c", 183: 
+
+*Error* Syntax error at soc_write32
+"../c_test/soc_test.c", 186: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 187: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 188: 
+
+*Error* Syntax error at sv_delay_cycles
+"../c_test/soc_test.c", 191: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 192: 
+
+*Error* Syntax error at CHECK_TRUE
+"../c_test/soc_test.c", 193: 
+
+*Error* Syntax error at return
+"../c_test/soc_test.c", 195: 
+
+*Error* Syntax error at }
+"../c_test/soc_test.c", 196: 
+
+*Error* Syntax error at (
+"../c_test/soc_test.c", 201: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 202: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 203: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 204: 
+
+*Error* Syntax error at uint32_t
+"../c_test/soc_test.c", 206: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 209: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 210: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 213: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 214: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 217: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 218: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 221: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 222: 
+
+*Warning* symbol uint32_t duplicated
+"../c_test/soc_test.c", 225: 
+
+*Warning* Deferred constant uint32_t was not initialized.
+"../c_test/soc_test.c", 225: 
+
+*Error* Syntax error at test_block0
+"../c_test/soc_test.c", 225: 
+
+*Error* Syntax error at soc_write32
+"../c_test/soc_test.c", 226: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 227: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 228: 
+
+*Error* Syntax error at return
+"../c_test/soc_test.c", 230: 
+
+*Error* Syntax error at }
+"../c_test/soc_test.c", 231: 
+
+*Error* Syntax error at (
+"../c_test/soc_test.c", 236: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 237: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 238: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 239: 
+
+*Error* Syntax error at uint32_t
+"../c_test/soc_test.c", 241: 
+
+*Warning* symbol uint32_t duplicated
+"../c_test/soc_test.c", 244: 
+
+*Warning* Deferred constant uint32_t was not initialized.
+"../c_test/soc_test.c", 244: 
+
+*Error* Syntax error at test_iv0
+"../c_test/soc_test.c", 244: 
+
+*Error* Syntax error at soc_write32
+"../c_test/soc_test.c", 245: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 246: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 247: 
+
+*Warning* symbol uint32_t duplicated
+"../c_test/soc_test.c", 250: 
+
+*Warning* Deferred constant uint32_t was not initialized.
+"../c_test/soc_test.c", 250: 
+
+*Error* Syntax error at test_iv1
+"../c_test/soc_test.c", 250: 
+
+*Error* Syntax error at soc_write32
+"../c_test/soc_test.c", 251: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 252: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 253: 
+
+*Error* Syntax error at soc_write32
+"../c_test/soc_test.c", 257: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 258: 
+
+*Error* Syntax error at CHECK_EQUAL
+"../c_test/soc_test.c", 259: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 262: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 263: 
+
+*Error* Syntax error at rd_val
+"../c_test/soc_test.c", 264: 
+
+*Error* Syntax error at CHECK_TRUE
+"../c_test/soc_test.c", 265: 
+
+*Error* Syntax error at return
+"../c_test/soc_test.c", 267: 
+
+*Error* Syntax error at }
+"../c_test/soc_test.c", 268: 
+
+*Error* Syntax error at (
+"../c_test/soc_test.c", 273: 
+
+*Error* Syntax error at g_pass_count
+"../c_test/soc_test.c", 274: 
+
+*Error* Syntax error at g_fail_count
+"../c_test/soc_test.c", 275: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 277: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 278: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 279: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 280: 
+
+*Error* Syntax error at test_uart_c
+"../c_test/soc_test.c", 283: 
+
+*Error* Syntax error at test_gpio_c
+"../c_test/soc_test.c", 284: 
+
+*Error* Syntax error at test_timer_c
+"../c_test/soc_test.c", 285: 
+
+*Error* Syntax error at test_sha256_c
+"../c_test/soc_test.c", 286: 
+
+*Error* Syntax error at test_aes256_c
+"../c_test/soc_test.c", 287: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 289: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 290: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 291: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 292: 
+
+*Error* Syntax error at if
+"../c_test/soc_test.c", 293: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 294: 
+
+*Error* Syntax error at }
+"../c_test/soc_test.c", 295: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 296: 
+
+*Error* Syntax error at }
+"../c_test/soc_test.c", 297: 
+
+*Error* Syntax error at printf
+"../c_test/soc_test.c", 298: 
+
+*Error* Syntax error at if
+"../c_test/soc_test.c", 300: 
+
+*Error* Syntax error at *
+"../c_test/soc_test.c", 301: 
+
+*Error* Syntax error at }
+"../c_test/soc_test.c", 302: 
+
+*Error* Syntax error at return
+"../c_test/soc_test.c", 304: 
+
+*Error* Syntax error at }
+"../c_test/soc_test.c", 305: 
+Highest level modules:
+aes_key_expand_128
+tb_soc_c_test
+
+Total	186 error(s),   9 warning(s)

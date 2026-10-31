@@ -1,0 +1,9 @@
++incdir+../rtl
+../rtl/aes/timescale.v
+../rtl/aes/aes_inv_sbox.v
+../rtl/aes/aes_key_expand_256.v
+../rtl/aes/aes_rcon.v
+../rtl/aes/aes_sbox.v
+../rtl/aes/aes_cipher_top.v
+../rtl/aes/aes_inv_cipher_top.v
+../tb/test_bench_top.v

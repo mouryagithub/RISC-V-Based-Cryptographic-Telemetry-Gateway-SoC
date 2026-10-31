@@ -1,0 +1,173 @@
+// =============================================================================
+// File        : soc_test_annotated.hex
+// Description : Verilog memory initialization file with disassembly
+// Architecture: RISC-V RV32I
+// =============================================================================
+
+
+// <_start>:
+@0000 F0048137    // [0x0000] lui sp, 0xF0048                     ; Initialize stack pointer in DCCM (32 KB top)
+@0001 F00401B7    // [0x0004] lui gp, 0xF0040                     ; Initialize global pointer in DCCM base
+@0002 40003537    // [0x0008] lui a0, 0x40003                     ; GPIO base address
+@0003 00100293    // [0x000C] addi t0, zero, 1                    ; Test status: Running (1)
+@0004 18552023    // [0x0010] sw t0, 384(a0)                      ; Write to GPIO_OUT0 (0x4000_3180)
+
+// <test_uart>:
+@0005 40001437    // [0x0014] lui s0, 0x40001                     ; UART base address (0x4000_1000)
+@0006 08000293    // [0x0018] addi t0, zero, 128                  ; LCR DLAB=1
+@0007 00542623    // [0x001C] sw t0, 12(s0)                       ; Write UART_LCR (0x4000_100C)
+@0008 1B200293    // [0x0020] addi t0, zero, 434                  ; Baud divisor = 434
+@0009 00542423    // [0x0024] sw t0, 8(s0)                        ; Write UART_BAUD_DIV (0x4000_1008)
+@000A 00000293    // [0x0028] addi t0, zero, 0                    ; LCR 8N1, DLAB=0
+@000B 00542623    // [0x002C] sw t0, 12(s0)                       ; Write UART_LCR
+@000C 00100293    // [0x0030] addi t0, zero, 1                    ; IER RX interrupt enable
+@000D 00542223    // [0x0034] sw t0, 4(s0)                        ; Write UART_IER (0x4000_1004)
+@000E 01442303    // [0x0038] lw t1, 20(s0)                       ; Read UART_LSR (0x4000_1014)
+@000F 05500293    // [0x003C] addi t0, zero, 85                   ; Char 'U' (0x55)
+@0010 00542023    // [0x0040] sw t0, 0(s0)                        ; Write UART_THR (0x4000_1000)
+@0011 0A300293    // [0x0044] addi t0, zero, 163                  ; Char 0xA3
+@0012 00542023    // [0x0048] sw t0, 0(s0)                        ; Write UART_THR
+@0013 01100293    // [0x004C] addi t0, zero, 17                   ; Byte 0x11
+@0014 00542023    // [0x0050] sw t0, 0(s0)                        ; Write UART_THR
+@0015 02200293    // [0x0054] addi t0, zero, 34                   ; Byte 0x22
+@0016 00542023    // [0x0058] sw t0, 0(s0)                        ; Write UART_THR
+@0017 03300293    // [0x005C] addi t0, zero, 51                   ; Byte 0x33
+@0018 00542023    // [0x0060] sw t0, 0(s0)                        ; Write UART_THR
+
+// <test_gpio>:
+@0019 400034B7    // [0x0064] lui s1, 0x40003                     ; GPIO base address (0x4000_3000)
+@001A 0004A303    // [0x0068] lw t1, 0(s1)                        ; Read GPIO_INFO (0x4000_3000)
+@001B 04000393    // [0x006C] addi t2, zero, 64                   ; Expected pin count = 64
+@001C 18731663    // [0x0070] bne t1, t2, test_fail (offset +396) ; Check GPIO_INFO == 64
+@001D 000002B7    // [0x0074] lui t0, 0x00000                     ; OE0 = all outputs
+@001E FFF28293    // [0x0078] addi t0, t0, -1                     ; li t0, 0xFFFFFFFF (lo)
+@001F 0854A023    // [0x007C] sw t0, 128(s1)                      ; Write GPIO_OE0 (0x4000_3080)
+@0020 0804A303    // [0x0080] lw t1, 128(s1)                      ; Readback GPIO_OE0
+@0021 16531C63    // [0x0084] bne t1, t0, test_fail (offset +376) ; Verify GPIO_OE0 readback
+@0022 A5A562B7    // [0x0088] lui t0, 0xA5A56                     ; Pattern 0xA5A55A5A
+@0023 A5A28293    // [0x008C] addi t0, t0, -1446                  ; li t0, 0xA5A55A5A (lo)
+@0024 1854A023    // [0x0090] sw t0, 384(s1)                      ; Write GPIO_OUT0 (0x4000_3180)
+@0025 1804A303    // [0x0094] lw t1, 384(s1)                      ; Readback GPIO_OUT0
+@0026 16531263    // [0x0098] bne t1, t0, test_fail (offset +356) ; Verify GPIO_OUT0 readback
+@0027 0FF00293    // [0x009C] addi t0, zero, 255                  ; Atomic SET mask
+@0028 2054A023    // [0x00A0] sw t0, 512(s1)                      ; Write GPIO_SET0 (0x4000_3200)
+@0029 1804A303    // [0x00A4] lw t1, 384(s1)                      ; Readback GPIO_OUT0 after SET
+@002A A5A563B7    // [0x00A8] lui t2, 0xA5A56                     ; Expected = 0xA5A55AFF
+@002B AFF38393    // [0x00AC] addi t2, t2, -1281                  ; li t2, 0xA5A55AFF (lo)
+@002C 14731663    // [0x00B0] bne t1, t2, test_fail (offset +332) ; Verify Atomic SET0
+@002D 00F00293    // [0x00B4] addi t0, zero, 15                   ; Atomic CLR mask
+@002E 2854A023    // [0x00B8] sw t0, 640(s1)                      ; Write GPIO_CLR0 (0x4000_3280)
+@002F 1804A303    // [0x00BC] lw t1, 384(s1)                      ; Readback GPIO_OUT0 after CLR
+@0030 A5A563B7    // [0x00C0] lui t2, 0xA5A56                     ; Expected = 0xA5A55AF0
+@0031 AF038393    // [0x00C4] addi t2, t2, -1296                  ; li t2, 0xA5A55AF0 (lo)
+@0032 12731A63    // [0x00C8] bne t1, t2, test_fail (offset +308) ; Verify Atomic CLR0
+@0033 000102B7    // [0x00CC] lui t0, 0x00010                     ; Atomic TGL mask
+@0034 F0028293    // [0x00D0] addi t0, t0, -256                   ; li t0, 0x0000FF00 (lo)
+@0035 3054A023    // [0x00D4] sw t0, 768(s1)                      ; Write GPIO_TGL0 (0x4000_3300)
+@0036 1804A303    // [0x00D8] lw t1, 384(s1)                      ; Readback GPIO_OUT0 after TGL
+@0037 A5A5A3B7    // [0x00DC] lui t2, 0xA5A5A                     ; Expected = 0xA5A5A5F0
+@0038 5F038393    // [0x00E0] addi t2, t2, 1520                   ; li t2, 0xA5A5A5F0 (lo)
+@0039 10731C63    // [0x00E4] bne t1, t2, test_fail (offset +280) ; Verify Atomic TGL0
+
+// <test_timer>:
+@003A 40002937    // [0x00E8] lui s2, 0x40002                     ; Timer base address (0x4000_2000)
+@003B 20000293    // [0x00EC] addi t0, zero, 512                  ; CMP_L threshold = 0x200
+@003C 10592C23    // [0x00F0] sw t0, 280(s2)                      ; Write TIMER_CMP_L (0x4000_2118)
+@003D 11892303    // [0x00F4] lw t1, 280(s2)                      ; Readback TIMER_CMP_L
+@003E 10531263    // [0x00F8] bne t1, t0, test_fail (offset +260) ; Verify CMP_L readback
+@003F 000102B7    // [0x00FC] lui t0, 0x00010                     ; step=1, prescaler=0
+@0040 10592623    // [0x0100] sw t0, 268(s2)                      ; Write TIMER_CFG0 (0x4000_210C)
+@0041 00000293    // [0x0104] addi t0, zero, 0                    ; Zero
+@0042 10592823    // [0x0108] sw t0, 272(s2)                      ; Clear TIMER_MTIME_L
+@0043 10592A23    // [0x010C] sw t0, 276(s2)                      ; Clear TIMER_MTIME_H
+@0044 00100293    // [0x0110] addi t0, zero, 1                    ; Active=1
+@0045 00592223    // [0x0114] sw t0, 4(s2)                        ; Write TIMER_CTRL (0x4000_2004)
+@0046 00000013    // [0x0118] addi zero, zero, 0                  ; Wait cycle 1
+@0047 00000013    // [0x011C] addi zero, zero, 0                  ; Wait cycle 2
+@0048 00000013    // [0x0120] addi zero, zero, 0                  ; Wait cycle 3
+@0049 11092303    // [0x0124] lw t1, 272(s2)                      ; Read TIMER_MTIME_L
+
+// <test_sha256>:
+@004A 400049B7    // [0x0128] lui s3, 0x40004                     ; SHA-256 base address (0x4000_4000)
+@004B 0009A303    // [0x012C] lw t1, 0(s3)                        ; Read SHA_NAME0 (0x4000_4000)
+@004C 736863B7    // [0x0130] lui t2, 0x73686                     ; Expected 'sha2'
+@004D 13238393    // [0x0134] addi t2, t2, 306                    ; li t2, 0x73686132 (lo)
+@004E 0C731263    // [0x0138] bne t1, t2, test_fail (offset +196) ; Verify SHA NAME0
+@004F 0049A303    // [0x013C] lw t1, 4(s3)                        ; Read SHA_NAME1 (0x4000_4004)
+@0050 2D3233B7    // [0x0140] lui t2, 0x2D323                     ; Expected '-256'
+@0051 53638393    // [0x0144] addi t2, t2, 1334                   ; li t2, 0x2D323536 (lo)
+@0052 0A731A63    // [0x0148] bne t1, t2, test_fail (offset +180) ; Verify SHA NAME1
+@0053 0089A303    // [0x014C] lw t1, 8(s3)                        ; Read SHA_VERSION (0x4000_4008)
+@0054 312E43B7    // [0x0150] lui t2, 0x312E4                     ; Expected '1.80'
+@0055 83038393    // [0x0154] addi t2, t2, -2000                  ; li t2, 0x312E3830 (lo)
+@0056 0A731263    // [0x0158] bne t1, t2, test_fail (offset +164) ; Verify SHA VERSION
+@0057 0249A303    // [0x015C] lw t1, 36(s3)                       ; Read SHA_STATUS (0x4000_4024)
+@0058 616262B7    // [0x0160] lui t0, 0x61626                     ; BLOCK0 pattern ('abc' + pad)
+@0059 38028293    // [0x0164] addi t0, t0, 896                    ; li t0, 0x61626380 (lo)
+@005A 0459A023    // [0x0168] sw t0, 64(s3)                       ; Write SHA_BLOCK0 (0x4000_4040)
+@005B 0409A303    // [0x016C] lw t1, 64(s3)                       ; Readback SHA_BLOCK0
+@005C 08531663    // [0x0170] bne t1, t0, test_fail (offset +140) ; Verify SHA BLOCK0 data
+
+// <test_aes>:
+@005D 40000A37    // [0x0174] lui s4, 0x40000                     ; AES base address (0x4000_0000)
+@005E DEADC2B7    // [0x0178] lui t0, 0xDEADC                     ; IV0 = 0xDEADBEEF
+@005F EEF28293    // [0x017C] addi t0, t0, -273                   ; li t0, 0xDEADBEEF (lo)
+@0060 025A2823    // [0x0180] sw t0, 48(s4)                       ; Write AES_IV0 (0x4000_0030)
+@0061 030A2303    // [0x0184] lw t1, 48(s4)                       ; Readback AES_IV0
+@0062 06531A63    // [0x0188] bne t1, t0, test_fail (offset +116) ; Verify AES_IV0 readback
+@0063 CAFEC2B7    // [0x018C] lui t0, 0xCAFEC                     ; IV1 = 0xCAFEBABE
+@0064 ABE28293    // [0x0190] addi t0, t0, -1346                  ; li t0, 0xCAFEBABE (lo)
+@0065 025A2A23    // [0x0194] sw t0, 52(s4)                       ; Write AES_IV1 (0x4000_0034)
+@0066 034A2303    // [0x0198] lw t1, 52(s4)                       ; Readback AES_IV1
+@0067 06531063    // [0x019C] bne t1, t0, test_fail (offset +96)  ; Verify AES_IV1 readback
+@0068 01200293    // [0x01A0] addi t0, zero, 18                   ; key_size=256, irq_en=1
+@0069 005A2023    // [0x01A4] sw t0, 0(s4)                        ; Write AES_CTRL (0x4000_0000)
+@006A 000A2303    // [0x01A8] lw t1, 0(s4)                        ; Readback AES_CTRL
+@006B 004A2303    // [0x01AC] lw t1, 4(s4)                        ; Read AES_STATUS (0x4000_0004)
+
+// <test_pass>:
+@006C 40003537    // [0x01B0] lui a0, 0x40003                     ; GPIO base address
+@006D 000092B7    // [0x01B4] lui t0, 0x00009                     ; Pass signature 0x900D
+@006E 00D28293    // [0x01B8] addi t0, t0, 13                     ; li t0, 0x0000900D (lo)
+@006F 18552223    // [0x01BC] sw t0, 388(a0)                      ; Write to GPIO_OUT1 (0x4000_3184)
+@0070 00200293    // [0x01C0] addi t0, zero, 2                    ; Status: Finished PASS (2)
+@0071 18552023    // [0x01C4] sw t0, 384(a0)                      ; Write to GPIO_OUT0 (0x4000_3180)
+@0072 40001437    // [0x01C8] lui s0, 0x40001                     ; UART base
+@0073 05000293    // [0x01CC] addi t0, zero, 80                   ; 'P'
+@0074 00542023    // [0x01D0] sw t0, 0(s0)                        ; UART TX 'P'
+@0075 04100293    // [0x01D4] addi t0, zero, 65                   ; 'A'
+@0076 00542023    // [0x01D8] sw t0, 0(s0)                        ; UART TX 'A'
+@0077 05300293    // [0x01DC] addi t0, zero, 83                   ; 'S'
+@0078 00542023    // [0x01E0] sw t0, 0(s0)                        ; UART TX 'S'
+@0079 05300293    // [0x01E4] addi t0, zero, 83                   ; 'S'
+@007A 00542023    // [0x01E8] sw t0, 0(s0)                        ; UART TX 'S'
+@007B 00A00293    // [0x01EC] addi t0, zero, 10                   ; '\n'
+@007C 00542023    // [0x01F0] sw t0, 0(s0)                        ; UART TX '\n'
+@007D 00100073    // [0x01F4] ebreak                              ; Breakpoint / Pass trap
+
+// <done_loop>:
+@007E 0000006F    // [0x01F8] j done_loop (offset +0)             ; Infinite idle loop
+
+// <test_fail>:
+@007F 40003537    // [0x01FC] lui a0, 0x40003                     ; GPIO base address
+@0080 DEADE2B7    // [0x0200] lui t0, 0xDEADE                     ; Fail signature 0xDEADDEAD
+@0081 EAD28293    // [0x0204] addi t0, t0, -339                   ; li t0, 0xDEADDEAD (lo)
+@0082 18552223    // [0x0208] sw t0, 388(a0)                      ; Write to GPIO_OUT1
+@0083 0000E2B7    // [0x020C] lui t0, 0x0000E                     ; Status: Finished FAIL
+@0084 EAD28293    // [0x0210] addi t0, t0, -339                   ; li t0, 0x0000DEAD (lo)
+@0085 18552023    // [0x0214] sw t0, 384(a0)                      ; Write to GPIO_OUT0
+@0086 40001437    // [0x0218] lui s0, 0x40001                     ; UART base
+@0087 04600293    // [0x021C] addi t0, zero, 70                   ; 'F'
+@0088 00542023    // [0x0220] sw t0, 0(s0)                        ; UART TX 'F'
+@0089 04100293    // [0x0224] addi t0, zero, 65                   ; 'A'
+@008A 00542023    // [0x0228] sw t0, 0(s0)                        ; UART TX 'A'
+@008B 04900293    // [0x022C] addi t0, zero, 73                   ; 'I'
+@008C 00542023    // [0x0230] sw t0, 0(s0)                        ; UART TX 'I'
+@008D 04C00293    // [0x0234] addi t0, zero, 76                   ; 'L'
+@008E 00542023    // [0x0238] sw t0, 0(s0)                        ; UART TX 'L'
+@008F 00A00293    // [0x023C] addi t0, zero, 10                   ; '\n'
+@0090 00542023    // [0x0240] sw t0, 0(s0)                        ; UART TX '\n'
+@0091 00100073    // [0x0244] ebreak                              ; Breakpoint / Fail trap
+
+// <fail_loop>:
+@0092 0000006F    // [0x0248] j fail_loop (offset +0)             ; Infinite fail loop

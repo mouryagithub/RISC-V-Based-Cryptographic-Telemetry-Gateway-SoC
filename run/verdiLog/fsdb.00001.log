@@ -1,7 +1,7 @@
 #######################################################################################
 # fsdb.xxxxx.log : log primitive debug message of FSDB Reader
 # This is for R&D to analyze when there are issues happening when FSDB reading
-# The corresponding FSDB file is /home/student/1602-23-735-154/project_dir/run/dump.fsdb
+# The corresponding FSDB file is /home/student/Documents/RISC-V-Based-Cryptographic-Telemetry-Gateway-SoC/run/dump.fsdb
 #######################################################################################
 [BASIC]Reader version : Chronologic Simulation VCS Release U-2023.03_Full64
 [BASIC]simulator version : Chronologic Simulation VCS Release U-2023.03_Full64
@@ -11,8 +11,8 @@
 [READSCOPE]ReadScopeTree calling time is 1
 [READSCOPE]ReadScope_PartialLoad calling time is 0
 [READSCOPE]Scope read by partial load count is 0
-[READSCOPE]Scope read count is 22
+[READSCOPE]Scope read count is 279
 [READSCOPE]Decompressed blk is 3
 [FSDBGate Info] start
-[FSDBGate Info] Total fhdb_compute_count = 51
+[FSDBGate Info] Total fhdb_compute_count = 293
 [FSDBGate Info] end

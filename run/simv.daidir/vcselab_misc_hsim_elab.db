@@ -1,6 +1,6 @@
 psSimBaseName                      	simv
 psLogFileName                      	NULL
-psDaiDir                           	simv.daidir
+psDaiDir                           	/home/student/Documents/RISC-V-Based-Cryptographic-Telemetry-Gateway-SoC/run/simv.daidir
 destPath                           	csrc/
 fSharedMasterElab                  	0
 fHsimPCSharedLibSpecified          	0
@@ -974,7 +974,7 @@ fHsimMxConnFrc                     	0
 fHsimNewForceCbkVec                	0
 fHsimNewForceCbkVecDiag            	0
 fHsimMdbReplaceVpdHighConn         	1
-fHsimVpdHighConnReplaced           	0
+fHsimVpdHighConnReplaced           	1
 fHsimVpdOptSVTypes                 	1
 fHsimDlyInitFrc                    	0
 fHsimPIP                           	0
@@ -1342,7 +1342,7 @@ fHsimPreInlineInstNum64            	0
 fHsimAutoInstNum64Limit            	-7
 fHsimAutoEnableInstNum64PC         	0
 fHsCgOptFixLeaf                    	1
-fHsimDumpVars                      	0
+fHsimDumpVars                      	1
 fFgpTbReactiveLite                 	1
 fHsimCcnUnion                      	0
 fHsimOnlyElabMod                   	0

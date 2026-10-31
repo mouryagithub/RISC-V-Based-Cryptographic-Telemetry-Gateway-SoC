@@ -1,0 +1,18 @@
+signal,input or output,size
+gpio_i,input,64
+gpio_i[63:0],input,64
+gpio_i[31:0],input,32
+gpio_i[63:32],input,32
+gpio_i[0],input,1
+gpio_o,output,64
+gpio_o[63:0],output,64
+gpio_o[31:0],output,32
+gpio_o[63:32],output,32
+gpio_o[0],output,1
+gpio_dir_o,output,64
+gpio_dir_o[63:0],output,64
+gpio_dir_o[31:0],output,32
+gpio_dir_o[63:32],output,32
+gpio_intr_o,output,2
+gpio_intr_o[0],output,1
+gpio_intr_o[1],output,1
