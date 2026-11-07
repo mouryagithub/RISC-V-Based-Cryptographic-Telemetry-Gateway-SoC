@@ -57,7 +57,7 @@
 ../rtl/sha/sha256_core.v
 ../rtl/sha/sha256.v
 ../rtl/sha/axi_sha256_top.v
-../rtl/interconnect/soc_top.v
+../rtl/soc_top.v
 
 gpio_vip_uvm_tb/gpio_vip_if.sv
 gpio_vip_uvm_tb/gpio_vip_pkg.sv

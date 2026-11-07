@@ -224,24 +224,6 @@ module soc_top #(
     wire                         s01_rvalid;
     wire                         s01_rready;
 
-    // -------------------------------------------------------------------------
-    // Internal Master 0: VeeR-EL2 CPU Core (when USE_INTERNAL_CPU = 1)
-    // -------------------------------------------------------------------------
-    wire [63:0] cpu_lsu_wdata;
-    wire [7:0]  cpu_lsu_wstrb;
-    wire [63:0] cpu_lsu_rdata;
-    wire [31:0] cpu_lsu_awaddr, cpu_lsu_araddr;
-    wire [3:0]  cpu_lsu_awid, cpu_lsu_arid;
-    wire        cpu_lsu_awvalid, cpu_lsu_awready;
-    wire        cpu_lsu_wvalid, cpu_lsu_wready, cpu_lsu_wlast;
-    wire        cpu_lsu_bvalid, cpu_lsu_bready;
-    wire [1:0]  cpu_lsu_bresp;
-    wire [3:0]  cpu_lsu_bid;
-    wire        cpu_lsu_arvalid, cpu_lsu_arready;
-    wire        cpu_lsu_rvalid, cpu_lsu_rready, cpu_lsu_rlast;
-    wire [1:0]  cpu_lsu_rresp;
-    wire [3:0]  cpu_lsu_rid;
-
     // Interrupt signals
     wire        uart_irq;
     wire        timer_irq;
@@ -274,8 +256,139 @@ module soc_top #(
 
     generate
         if (USE_INTERNAL_CPU) begin : gen_veer_cpu
+            // -----------------------------------------------------------------
+            // Internal Master 0: VeeR-EL2 CPU Core (RV32IMC Dual-Issue Subsystem)
+            // -----------------------------------------------------------------
+            wire [63:0] cpu_lsu_wdata;
+            wire [7:0]  cpu_lsu_wstrb;
+            wire [63:0] cpu_lsu_rdata;
+            wire [31:0] cpu_lsu_awaddr, cpu_lsu_araddr;
+            wire [2:0]  cpu_lsu_awid, cpu_lsu_arid;
+            wire        cpu_lsu_awvalid, cpu_lsu_awready;
+            wire        cpu_lsu_wvalid, cpu_lsu_wready, cpu_lsu_wlast;
+            wire        cpu_lsu_bvalid, cpu_lsu_bready;
+            wire [1:0]  cpu_lsu_bresp;
+            wire [2:0]  cpu_lsu_bid;
+            wire        cpu_lsu_arvalid, cpu_lsu_arready;
+            wire        cpu_lsu_rvalid, cpu_lsu_rready, cpu_lsu_rlast;
+            wire [1:0]  cpu_lsu_rresp;
+            wire [2:0]  cpu_lsu_rid;
+
+            veer_core_top u_cpu (
+                .clk                 (clk),
+                .rst_l               (aresetn),
+                .dbg_rst_l           (aresetn),
+                .rst_vec             (31'h4000_0000), // Reset PC: 0x8000_0000
+                .nmi_int             (1'b0),
+                .nmi_vec             (31'h4000_0000),
+                .jtag_id             (31'h0),
+
+                // LSU AXI4 Master -> Crossbar S00
+                .lsu_axi_awvalid     (cpu_lsu_awvalid),
+                .lsu_axi_awready     (cpu_lsu_awready),
+                .lsu_axi_awid        (cpu_lsu_awid),
+                .lsu_axi_awaddr      (cpu_lsu_awaddr),
+                .lsu_axi_awregion    (),
+                .lsu_axi_awlen       (),
+                .lsu_axi_awsize      (),
+                .lsu_axi_awburst     (),
+                .lsu_axi_awlock      (),
+                .lsu_axi_awcache     (),
+                .lsu_axi_awprot      (),
+                .lsu_axi_awqos       (),
+                .lsu_axi_wvalid      (cpu_lsu_wvalid),
+                .lsu_axi_wready      (cpu_lsu_wready),
+                .lsu_axi_wdata       (cpu_lsu_wdata),
+                .lsu_axi_wstrb       (cpu_lsu_wstrb),
+                .lsu_axi_wlast       (cpu_lsu_wlast),
+                .lsu_axi_bvalid      (cpu_lsu_bvalid),
+                .lsu_axi_bready      (cpu_lsu_bready),
+                .lsu_axi_bresp       (cpu_lsu_bresp),
+                .lsu_axi_bid         (cpu_lsu_bid),
+                .lsu_axi_arvalid     (cpu_lsu_arvalid),
+                .lsu_axi_arready     (cpu_lsu_arready),
+                .lsu_axi_arid        (cpu_lsu_arid),
+                .lsu_axi_araddr      (cpu_lsu_araddr),
+                .lsu_axi_arregion    (),
+                .lsu_axi_arlen       (),
+                .lsu_axi_arsize      (),
+                .lsu_axi_arburst     (),
+                .lsu_axi_arlock      (),
+                .lsu_axi_arcache     (),
+                .lsu_axi_arprot      (),
+                .lsu_axi_arqos       (),
+                .lsu_axi_rvalid      (cpu_lsu_rvalid),
+                .lsu_axi_rready      (cpu_lsu_rready),
+                .lsu_axi_rid         (cpu_lsu_rid),
+                .lsu_axi_rdata       (cpu_lsu_rdata),
+                .lsu_axi_rresp       (cpu_lsu_rresp),
+                .lsu_axi_rlast       (cpu_lsu_rlast),
+
+                // IFU AXI4 Master (Instruction Fetch)
+                .ifu_axi_awvalid     (),
+                .ifu_axi_awready     (1'b0),
+                .ifu_axi_awid        (),
+                .ifu_axi_awaddr      (),
+                .ifu_axi_awregion    (),
+                .ifu_axi_awlen       (),
+                .ifu_axi_awsize      (),
+                .ifu_axi_awburst     (),
+                .ifu_axi_awlock      (),
+                .ifu_axi_awcache     (),
+                .ifu_axi_awprot      (),
+                .ifu_axi_awqos       (),
+                .ifu_axi_wvalid      (),
+                .ifu_axi_wready      (1'b0),
+                .ifu_axi_wdata       (),
+                .ifu_axi_wstrb       (),
+                .ifu_axi_wlast       (),
+                .ifu_axi_bvalid      (1'b0),
+                .ifu_axi_bready      (),
+                .ifu_axi_bresp       (2'b00),
+                .ifu_axi_bid         (3'b0),
+                .ifu_axi_arvalid     (),
+                .ifu_axi_arready     (1'b0),
+                .ifu_axi_arid        (),
+                .ifu_axi_araddr      (),
+                .ifu_axi_arregion    (),
+                .ifu_axi_arlen       (),
+                .ifu_axi_arsize      (),
+                .ifu_axi_arburst     (),
+                .ifu_axi_arlock      (),
+                .ifu_axi_arcache     (),
+                .ifu_axi_arprot      (),
+                .ifu_axi_arqos       (),
+                .ifu_axi_rvalid      (1'b0),
+                .ifu_axi_rready      (),
+                .ifu_axi_rid         (3'b0),
+                .ifu_axi_rdata       (64'b0),
+                .ifu_axi_rresp       (2'b00),
+                .ifu_axi_rlast       (1'b0),
+
+                // Interrupt routing from SoC peripherals to VeeR PIC Gateway
+                .timer_int           (timer_irq),
+                .soft_int            (1'b0),
+                .extintsrc_req       (pic_ext_irqs),
+
+                // Core Halt & Run Status
+                .o_cpu_halt_status   (cpu_halt_status_o),
+                .o_cpu_halt_ack      (),
+                .o_cpu_run_ack       (),
+                .o_debug_mode_status (),
+                .i_cpu_halt_req      (1'b0),
+                .i_cpu_run_req       (1'b0),
+
+                // JTAG TAP Controller
+                .jtag_tck            (1'b0),
+                .jtag_tms            (1'b0),
+                .jtag_tdi            (1'b0),
+                .jtag_trst_n         (aresetn),
+                .jtag_tdo            (),
+                .jtag_tdoEn          ()
+            );
+
             // 64-bit to 32-bit LSU bus steering
-            assign s00_awid    = {4'b0, cpu_lsu_awid};
+            assign s00_awid    = {5'b0, cpu_lsu_awid};
             assign s00_awaddr  = cpu_lsu_awaddr;
             assign s00_awlen   = 8'd0;
             assign s00_awsize  = 3'd2; // 32-bit word
@@ -295,10 +408,10 @@ module soc_top #(
 
             assign cpu_lsu_bvalid = s00_bvalid;
             assign cpu_lsu_bresp  = s00_bresp;
-            assign cpu_lsu_bid    = s00_bid[3:0];
+            assign cpu_lsu_bid    = s00_bid[2:0];
             assign s00_bready     = cpu_lsu_bready;
 
-            assign s00_arid    = {4'b0, cpu_lsu_arid};
+            assign s00_arid    = {5'b0, cpu_lsu_arid};
             assign s00_araddr  = cpu_lsu_araddr;
             assign s00_arlen   = 8'd0;
             assign s00_arsize  = 3'd2;
@@ -313,7 +426,7 @@ module soc_top #(
             assign cpu_lsu_rdata  = {s00_rdata, s00_rdata}; // duplicate to both halves
             assign cpu_lsu_rvalid = s00_rvalid;
             assign cpu_lsu_rresp  = s00_rresp;
-            assign cpu_lsu_rid    = s00_rid[3:0];
+            assign cpu_lsu_rid    = s00_rid[2:0];
             assign cpu_lsu_rlast  = s00_rlast;
             assign s00_rready     = cpu_lsu_rready;
 
@@ -329,8 +442,6 @@ module soc_top #(
             assign ext_s00_axi_rresp   = 2'b10;
             assign ext_s00_axi_rid     = '0;
             assign ext_s00_axi_rlast   = 1'b0;
-
-            assign cpu_halt_status_o = 1'b0;
         end else begin : gen_ext_master
             // Pass external testbench master directly into s00
             assign s00_awid     = ext_s00_axi_awid;

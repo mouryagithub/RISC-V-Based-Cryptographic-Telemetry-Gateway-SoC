@@ -1,1331 +1,552 @@
+RISC-V Based Cryptographic Telemetry Gateway SoC
+System Architecture, Signal Interface, Memory Map, Subsystem Register, and Functional Specification
+Document Version: 2.0 (Consolidated Technical Specification)  |  Core Architecture: Western Digital VeeR-EL2 (RV32IMC)  |  Interconnect: 64-bit AMBA AXI4 Crossbar  |  Date: November 2026
+
 1. Introduction
+===============
+
 1.1 Problem Statement & Background
-Modern embedded telemetry systems require real-time data ingestion coupled with cryptographic verification and encryption. Executing high-bandwidth stream hashing (SHA-256) and block cipher transformations (AES-256 CBC) entirely in software on a 32-bit RISC-V core consumes substantial processor execution cycles, which can cause processing delays and increase CPU load during high-rate data transfers.
+==================================
+Modern embedded telemetry systems in aerospace, industrial automation, and defense applications require real-time, deterministic data ingestion coupled with rigorous cryptographic verification and encryption. When high-bandwidth telemetry streams are ingested, executing high-bandwidth stream hashing (SHA-256 for message authentication and integrity verification) and block cipher transformations (AES-256 CBC for confidentiality protection) entirely in software on a 32-bit RISC-V core consumes substantial processor execution cycles. This software compute bottleneck causes substantial processing latency, degrades real-time interrupt response, and limits achievable telemetry ingress throughput.
+
 1.2 Purpose of the SoC
-The Cryptographic Telemetry Gateway SoC is a custom System-on-Chip designed to offload data movement and cryptographic compute overhead from the VeeR EL2 processor core. By combining a 32-bit open-source VeeR EL2 RISC-V processor with an autonomous DMA controller, a shared 64 KB SRAM frame buffer, and dedicated hardware accelerators for SHA-256 and AES-256, the SoC enables hardware-accelerated telemetry ingestion, integrity hashing, and payload encryption with reduced CPU intervention.
+======================
+The Cryptographic Telemetry Gateway SoC is a custom System-on-Chip architected to offload bulk data movement and cryptographic compute overhead entirely from the central processor core. By combining an open-source 32-bit Western Digital VeeR EL2 RISC-V processor core (RV32IMC) with an autonomous 64-bit Direct Memory Access (DMA) controller, a shared 64 KB System SRAM frame buffer, and dedicated hardware accelerators for SHA-256 and AES-256, the SoC enables hardware-accelerated telemetry ingestion, integrity hashing, and payload encryption with minimal CPU intervention.
+
 1.3 Key Architectural Objectives
-Hardware Accelerator Offload: Execute payload integrity verification (SHA-256) and confidentiality enforcement (AES-256 CBC) on dedicated hardware blocks rather than consuming CPU execution cycles with software cryptographic loops.
-Autonomous Data Movement: Employ a DMA controller to manage bulk data transfers between system memory and accelerator endpoints, minimizing core involvement in payload routing.
-Bus Fabric Separation: Carry both high-throughput data traffic and peripheral control-plane register configuration over a unified 64-bit AMBA AXI4 crossbar. Peripherals with lightweight register interfaces are accessed via AXI4-Lite slave ports directly from the AXI4 interconnect.
-Event-Driven Exception Handling: Route timer, DMA, and cryptographic completion/error events directly into the VeeR EL2 core’s Programmable Interrupt Controller (PIC) to notify the processor of hardware events.
-2. Block Diagram
-3. Signal List
-Complete SoC Signal List
+================================
+Design Highlight: The architecture cleanly decouples the 64-bit high-speed burst data planes (System SRAM, DMA engine, and Cryptographic FIFO endpoints) from the 32-bit peripheral control planes, ensuring that register configurations never bottleneck active high-bandwidth DMA cryptographic pipelines.
+
+2. SoC Architecture Block Diagram
+=================================
+The control path defines how the Western Digital VeeR EL2 core orchestrates system operations across the unified AXI4/AXI4-Lite interconnect architecture. The diagram below illustrates the master-slave interconnect topology, the 64-bit AXI4 crossbar, the AXI4-to-AXI4-Lite bridge, the peripheral subsystem, and the hardware accelerators.
+RISC-V Cryptographic Telemetry Gateway SoC Architecture Diagram
+Figure 2.1: Master SoC Architectural Interconnect and Subsystem Topology
+As illustrated in Figure 2.1, two AXI4 master agents drive transactions across the central crossbar:
+The interconnect arbitrates concurrent accesses and routes transactions to system slaves including the 64 KB System SRAM, Boot ROM, the AXI4-Lite peripheral subsystem via protocol bridge, and dedicated cryptographic data streaming endpoints.
+
+3. Complete SoC Signal and Interface Specification
+==================================================
+
 1. External SoC Boundary Signals
-Signal Name | Direction | Width | Source | Destination | Function
-Signal Name
-Direction
-Width
-Source
-Destination
-Function
-sys_clk | Input | 1 | External Board | SoC Clock Network | Primary system clock
-sys_clk
-Input
-1
-External Board
-SoC Clock Network
-Primary system clock
-sys_rst_n | Input | 1 | External Reset Source | SoC Reset Network | Global active-low reset
-sys_rst_n
-Input
-1
-External Reset Source
-SoC Reset Network
-Global active-low reset
-uart_rx | Input | 1 | External Host | UART Controller | Serial telemetry ingress
-uart_rx
-Input
-1
-External Host
-UART Controller
-Serial telemetry ingress
-uart_tx | Output | 1 | UART Controller | External Host | Serial telemetry egress
-uart_tx
-Output
-1
-UART Controller
-External Host
-Serial telemetry egress
-gpio_in[15:0] | Input | 16 | External Inputs | GPIO Controller | General-purpose digital inputs
-gpio_in[15:0]
-Input
-16
-External Inputs
-GPIO Controller
-General-purpose digital inputs
-gpio_out[15:0] | Output | 16 | GPIO Controller | External Outputs | General-purpose digital outputs
-gpio_out[15:0]
-Output
-16
-GPIO Controller
-External Outputs
-General-purpose digital outputs
+================================
+The table below specifies the complete external physical boundary pinout of the SoC top-level module (soc_top), including system clocks, active-low reset, serial telemetry interface, 64-pin general purpose I/O, external interrupt observation lines, processor status, and external testbench master verification interfaces.
+
+Signal Name | Direction | Width | Source | Destination | Function & Description
+clk  (sys_clk) | Input | 1 | External Oscillator | Clock Distribution Network | Primary system clock (50 MHz / 100 MHz) for AXI4 crossbar, CPU core, DMA, and accelerators.
+uart_clk | Input | 1 | External Oscillator | UART Clock Network | Dedicated fixed reference clock (50 MHz) for UART baud rate generator and serial FSMs.
+aresetn  (sys_rst_n) | Input | 1 | External Power-On Reset | Reset Distribution Network | Global asynchronous active-low system reset. Distributed synchronously to all SoC blocks.
+uart_rx | Input | 1 | External Host / Sensor | UART Controller | Asynchronous serial telemetry data ingress receive pin.
+uart_tx | Output | 1 | UART Controller | External Host / Sensor | Asynchronous serial telemetry data egress transmit pin.
+gpio_i[63:0] | Input | 64 | External Package Pins | GPIO Controller | 64-bit parallel raw digital inputs from external package pads (Bank 0: [31:0], Bank 1: [63:32]).
+gpio_o[63:0] | Output | 64 | GPIO Controller | External Package Pins | 64-bit parallel digital output drive lines to external package pads.
+gpio_dir_o[63:0] | Output | 64 | GPIO Controller | External IO Buffers | 64-bit parallel tri-state output drive enable control (1 = Output Drive, 0 = High-Z / Input).
+uart_irq_o | Output | 1 | UART Controller | External Observation Pin | Direct external observation of UART RX/TX FIFO and line error interrupt line.
+timer_irq_o | Output | 1 | System Timer | External Observation Pin | Direct external observation of 64-bit real-time counter compare match event.
+aes_irq_o | Output | 1 | AES Accelerator | External Observation Pin | Direct external observation of AES cipher operation complete interrupt.
+sha_irq_o | Output | 1 | SHA Accelerator | External Observation Pin | Direct external observation of SHA-256 digest computation valid interrupt.
+dma_done_o | Output | 1 | DMA Controller | External Observation Pin | Direct external observation of DMA descriptor block transfer completed interrupt.
+dma_error_o | Output | 1 | DMA Controller | External Observation Pin | Direct external observation of DMA AXI bus transfer fault (SLVERR/DECERR) interrupt.
+gpio_intr_o[1:0] | Output | 2 | GPIO Controller | External Observation Pins | Direct external observation of GPIO edge/level interrupt triggers ([0]=Bank 0, [1]=Bank 1).
+cpu_halt_status_o | Output | 1 | VeeR EL2 Core | External Debug Header | Processor execution status (asserts when core is in low-power halt or debug mode).
+ext_s00_axi_* | Input / Output | Bus | External Testbench VIP | AXI Crossbar Master 0 | External AXI4 Master 0 port (5 channels) enabled when  USE_INTERNAL_CPU = 0 .
+dma_csr_* | Input / Output | Bus | External Testbench / CPU | DMA Controller Slave | External 32-bit AXI4-Lite DMA CSR direct configuration port for verification bypass.
+
+
 2. VeeR EL2 ↔ ICCM Interface
+============================
+
 Signal Name | Direction | Width | Source | Destination | Function
-Signal Name
-Direction
-Width
-Source
-Destination
-Function
-iccm_clken | Output | 1 | VeeR EL2 | ICCM | ICCM access enable
-iccm_clken
-Output
-1
-VeeR EL2
-ICCM
-ICCM access enable
-iccm_rw | Output | 1 | VeeR EL2 | ICCM | Read/write control
-iccm_rw
-Output
-1
-VeeR EL2
-ICCM
-Read/write control
-iccm_addr | Output | 19 | VeeR EL2 | ICCM | ICCM address
-iccm_addr
-Output
-19
-VeeR EL2
-ICCM
-ICCM address
-iccm_wdata | Output | 39 | VeeR EL2 | ICCM | Write data including ECC
-iccm_wdata
-Output
-39
-VeeR EL2
-ICCM
-Write data including ECC
-iccm_rdata | Input | 39 | ICCM | VeeR EL2 | Read data including ECC
-iccm_rdata
-Input
-39
-ICCM
-VeeR EL2
-Read data including ECC
+iccm_clken | Output | 1 | VeeR EL2 | ICCM | ICCM memory access enable strobe.
+iccm_rw | Output | 1 | VeeR EL2 | ICCM | ICCM read/write access direction control (1 = Write, 0 = Read).
+iccm_addr | Output | 19 | VeeR EL2 | ICCM | ICCM word address bus (128 KB addressable range).
+iccm_wdata | Output | 39 | VeeR EL2 | ICCM | Write data payload including 7-bit SECDED ECC parity bits.
+iccm_rdata | Input | 39 | ICCM | VeeR EL2 | Read data payload including 7-bit SECDED ECC parity bits.
+
+
 3. VeeR EL2 ↔ DCCM Interface
+============================
+
 Signal Name | Direction | Width | Source | Destination | Function
-Signal Name
-Direction
-Width
-Source
-Destination
-Function
-dccm_clken | Output | 1 | VeeR EL2 | DCCM | DCCM access enable
-dccm_clken
-Output
-1
-VeeR EL2
-DCCM
-DCCM access enable
-dccm_rw | Output | 1 | VeeR EL2 | DCCM | Read/write control
-dccm_rw
-Output
-1
-VeeR EL2
-DCCM
-Read/write control
-dccm_addr | Output | 16 | VeeR EL2 | DCCM | DCCM address
-dccm_addr
-Output
-16
-VeeR EL2
-DCCM
-DCCM address
-dccm_wdata | Output | 39 | VeeR EL2 | DCCM | Write data including ECC
-dccm_wdata
-Output
-39
-VeeR EL2
-DCCM
-Write data including ECC
-dccm_byteen[3:0] | Output | 4 | VeeR EL2 | DCCM | Write byte enables
-dccm_byteen[3:0]
-Output
-4
-VeeR EL2
-DCCM
-Write byte enables
-dccm_rdata | Input | 39 | DCCM | VeeR EL2 | Read data including ECC
-dccm_rdata
-Input
-39
-DCCM
-VeeR EL2
-Read data including ECC
-4. VeeR EL2 ↔ AXI4 Interconnect
+dccm_clken | Output | 1 | VeeR EL2 | DCCM | DCCM memory access enable strobe.
+dccm_rw | Output | 1 | VeeR EL2 | DCCM | DCCM read/write access direction control (1 = Write, 0 = Read).
+dccm_addr | Output | 16 | VeeR EL2 | DCCM | DCCM word address bus (128 KB addressable range).
+dccm_wdata | Output | 39 | VeeR EL2 | DCCM | Write data payload including ECC protection.
+dccm_byteen | Output | 4 | VeeR EL2 | DCCM | Individual byte lane write strobe enables.
+dccm_rdata | Input | 39 | DCCM | VeeR EL2 | Read data payload including ECC protection.
+
+
+4. VeeR EL2 ↔ AXI4 Interconnect (Master Port S00)
+=================================================
+
 Write Address Channel
+=====================
+
 Signal Name | Direction | Width | Function
-Signal Name
-Direction
-Width
-Function
-lsu_axi_awid | Output | 3 | Write transaction ID
-lsu_axi_awid
-Output
-3
-Write transaction ID
-lsu_axi_awaddr | Output | 32 | Write address
-lsu_axi_awaddr
-Output
-32
-Write address
-lsu_axi_awlen | Output | 8 | Burst length
-lsu_axi_awlen
-Output
-8
-Burst length
-lsu_axi_awsize | Output | 3 | Burst transfer size
-lsu_axi_awsize
-Output
-3
-Burst transfer size
-lsu_axi_awburst | Output | 2 | Burst type
-lsu_axi_awburst
-Output
-2
-Burst type
-lsu_axi_awlock | Output | 1 | Lock control
-lsu_axi_awlock
-Output
-1
-Lock control
-lsu_axi_awprot | Output | 3 | Protection attributes
-lsu_axi_awprot
-Output
-3
-Protection attributes
-lsu_axi_awvalid | Output | 1 | Write address valid
-lsu_axi_awvalid
-Output
-1
-Write address valid
-lsu_axi_awready | Input | 1 | Write address accepted
-lsu_axi_awready
-Input
-1
-Write address accepted
+lsu_axi_awid | Output | 3 | AXI4 write transaction identification tag.
+lsu_axi_awaddr | Output | 32 | Target memory write start address.
+lsu_axi_awlen | Output | 8 | Burst length (number of data transfers minus 1).
+lsu_axi_awsize | Output | 3 | Burst beat size in bytes (e.g., 3'b011 = 8 bytes / 64-bit).
+lsu_axi_awburst | Output | 2 | Burst type (2'b01 = INCR incremental burst).
+lsu_axi_awlock | Output | 1 | Atomic access lock indicator.
+lsu_axi_awcache | Output | 4 | Memory bufferability and cacheability attributes.
+lsu_axi_awprot | Output | 3 | Privilege level and security access protection.
+lsu_axi_awvalid | Output | 1 | Write address channel handshake valid flag.
+lsu_axi_awready | Input | 1 | Write address channel handshake ready from interconnect.
+
+
 Write Data Channel
+==================
+
 Signal Name | Direction | Width | Function
-Signal Name
-Direction
-Width
-Function
-lsu_axi_wdata | Output | 64 | Write data
-lsu_axi_wdata
-Output
-64
-Write data
-lsu_axi_wstrb | Output | 8 | Write byte strobes
-lsu_axi_wstrb
-Output
-8
-Write byte strobes
-lsu_axi_wlast | Output | 1 | Last write beat
-lsu_axi_wlast
-Output
-1
-Last write beat
-lsu_axi_wvalid | Output | 1 | Write data valid
-lsu_axi_wvalid
-Output
-1
-Write data valid
-lsu_axi_wready | Input | 1 | Write data accepted
-lsu_axi_wready
-Input
-1
-Write data accepted
+lsu_axi_wdata | Output | 64 | 64-bit primary write data bus payload.
+lsu_axi_wstrb | Output | 8 | 8-bit individual byte lane write strobes.
+lsu_axi_wlast | Output | 1 | Indicates final transfer beat in an AXI burst sequence.
+lsu_axi_wvalid | Output | 1 | Write data channel handshake valid flag.
+lsu_axi_wready | Input | 1 | Write data channel handshake ready from slave.
+
+
 Write Response Channel
+======================
+
 Signal Name | Direction | Width | Function
-Signal Name
-Direction
-Width
-Function
-lsu_axi_bid | Input | 3 | Response transaction ID
-lsu_axi_bid
-Input
-3
-Response transaction ID
-lsu_axi_bresp | Input | 2 | Write response
-lsu_axi_bresp
-Input
-2
-Write response
-lsu_axi_bvalid | Input | 1 | Write response valid
-lsu_axi_bvalid
-Input
-1
-Write response valid
-lsu_axi_bready | Output | 1 | Response accepted
-lsu_axi_bready
-Output
-1
-Response accepted
+lsu_axi_bid | Input | 3 | Response transaction identification tag match.
+lsu_axi_bresp | Input | 2 | Write status response (2'b00=OKAY, 2'b10=SLVERR, 2'b11=DECERR).
+lsu_axi_bvalid | Input | 1 | Write response valid strobe from slave.
+lsu_axi_bready | Output | 1 | Master ready to accept write completion response.
+
+
 Read Address Channel
+====================
+
 Signal Name | Direction | Width | Function
-Signal Name
-Direction
-Width
-Function
-lsu_axi_arid | Output | 3 | Read transaction ID
-lsu_axi_arid
-Output
-3
-Read transaction ID
-lsu_axi_araddr | Output | 32 | Read address
-lsu_axi_araddr
-Output
-32
-Read address
-lsu_axi_arlen | Output | 8 | Burst length
-lsu_axi_arlen
-Output
-8
-Burst length
-lsu_axi_arsize | Output | 3 | Burst transfer size
-lsu_axi_arsize
-Output
-3
-Burst transfer size
-lsu_axi_arburst | Output | 2 | Burst type
-lsu_axi_arburst
-Output
-2
-Burst type
-lsu_axi_arlock | Output | 1 | Lock control
-lsu_axi_arlock
-Output
-1
-Lock control
-lsu_axi_arprot | Output | 3 | Protection attributes
-lsu_axi_arprot
-Output
-3
-Protection attributes
-lsu_axi_arvalid | Output | 1 | Read address valid
-lsu_axi_arvalid
-Output
-1
-Read address valid
-lsu_axi_arready | Input | 1 | Read address accepted
-lsu_axi_arready
-Input
-1
-Read address accepted
+lsu_axi_arid | Output | 3 | AXI4 read transaction identification tag.
+lsu_axi_araddr | Output | 32 | Target memory read start address.
+lsu_axi_arlen | Output | 8 | Burst length (number of beats minus 1).
+lsu_axi_arsize | Output | 3 | Burst beat size (3'b011 = 8 bytes / 64-bit).
+lsu_axi_arburst | Output | 2 | Burst type (2'b01 = INCR incremental burst).
+lsu_axi_arlock | Output | 1 | Atomic read lock indicator.
+lsu_axi_arcache | Output | 4 | Memory cacheability attributes.
+lsu_axi_arprot | Output | 3 | Privilege level and security access protection.
+lsu_axi_arvalid | Output | 1 | Read address channel handshake valid flag.
+lsu_axi_arready | Input | 1 | Read address channel handshake ready from interconnect.
+
+
 Read Data Channel
+=================
+
 Signal Name | Direction | Width | Function
-Signal Name
-Direction
-Width
-Function
-lsu_axi_rid | Input | 3 | Read transaction ID
-lsu_axi_rid
-Input
-3
-Read transaction ID
-lsu_axi_rdata | Input | 64 | Read data
-lsu_axi_rdata
-Input
-64
-Read data
-lsu_axi_rresp | Input | 2 | Read response
-lsu_axi_rresp
-Input
-2
-Read response
-lsu_axi_rlast | Input | 1 | Last read beat
-lsu_axi_rlast
-Input
-1
-Last read beat
-lsu_axi_rvalid | Input | 1 | Read data valid
-lsu_axi_rvalid
-Input
-1
-Read data valid
-lsu_axi_rready | Output | 1 | Read data accepted
-lsu_axi_rready
-Output
-1
-Read data accepted
-5. DMA ↔ AXI4 Interconnect
+lsu_axi_rid | Input | 3 | Read data transaction identification tag match.
+lsu_axi_rdata | Input | 64 | 64-bit primary read data bus payload.
+lsu_axi_rresp | Input | 2 | Read status response code.
+lsu_axi_rlast | Input | 1 | Indicates final transfer beat in a read burst sequence.
+lsu_axi_rvalid | Input | 1 | Read data channel handshake valid flag from slave.
+lsu_axi_rready | Output | 1 | Master ready to accept incoming read data beat.
+
+
+5. DMA ↔ AXI4 Interconnect (Master Port S01)
+============================================
+
 Write Address Channel
+=====================
+
 Signal Name | Direction | Width | Function
-Signal Name
-Direction
-Width
-Function
-dma_m_axi_awaddr | Output | 32 | DMA write address
-dma_m_axi_awaddr
-Output
-32
-DMA write address
-dma_m_axi_awlen | Output | 8 | Write burst length
-dma_m_axi_awlen
-Output
-8
-Write burst length
-dma_m_axi_awsize | Output | 3 | Write transfer size
-dma_m_axi_awsize
-Output
-3
-Write transfer size
-dma_m_axi_awburst | Output | 2 | Write burst type
-dma_m_axi_awburst
-Output
-2
-Write burst type
-dma_m_axi_awvalid | Output | 1 | Write address valid
-dma_m_axi_awvalid
-Output
-1
-Write address valid
-dma_m_axi_awready | Input | 1 | Write address accepted
-dma_m_axi_awready
-Input
-1
-Write address accepted
+dma_m_axi_awaddr | Output | 32 | DMA autonomous write target address.
+dma_m_axi_awlen | Output | 8 | DMA write burst length (up to 256 beats per transaction).
+dma_m_axi_awsize | Output | 3 | DMA write transfer beat size (64-bit = 3'b011).
+dma_m_axi_awburst | Output | 2 | Burst type (2'b01 = INCR incremental mode).
+dma_m_axi_awvalid | Output | 1 | DMA write address valid handshake strobe.
+dma_m_axi_awready | Input | 1 | Crossbar accepts DMA write address.
+
+
 Write Data Channel
+==================
+
 Signal Name | Direction | Width | Function
-Signal Name
-Direction
-Width
-Function
-dma_m_axi_wdata | Output | 64 | DMA write data
-dma_m_axi_wdata
-Output
-64
-DMA write data
-dma_m_axi_wstrb | Output | 8 | Write byte strobes
-dma_m_axi_wstrb
-Output
-8
-Write byte strobes
-dma_m_axi_wlast | Output | 1 | Last write beat
-dma_m_axi_wlast
-Output
-1
-Last write beat
-dma_m_axi_wvalid | Output | 1 | Write data valid
-dma_m_axi_wvalid
-Output
-1
-Write data valid
-dma_m_axi_wready | Input | 1 | Write data accepted
-dma_m_axi_wready
-Input
-1
-Write data accepted
+dma_m_axi_wdata | Output | 64 | DMA 64-bit payload data stream.
+dma_m_axi_wstrb | Output | 8 | Active byte lane write strobes.
+dma_m_axi_wlast | Output | 1 | Last beat indicator for DMA burst block.
+dma_m_axi_wvalid | Output | 1 | DMA write data valid handshake strobe.
+dma_m_axi_wready | Input | 1 | Target slave ready to receive DMA data beat.
+
+
 Write Response Channel
+======================
+
 Signal Name | Direction | Width | Function
-Signal Name
-Direction
-Width
-Function
-dma_m_axi_bresp | Input | 2 | Write response
-dma_m_axi_bresp
-Input
-2
-Write response
-dma_m_axi_bvalid | Input | 1 | Write response valid
-dma_m_axi_bvalid
-Input
-1
-Write response valid
-dma_m_axi_bready | Output | 1 | Response accepted
-dma_m_axi_bready
-Output
-1
-Response accepted
+dma_m_axi_bresp | Input | 2 | Write status response code from target memory/slave.
+dma_m_axi_bvalid | Input | 1 | Write response valid handshake strobe.
+dma_m_axi_bready | Output | 1 | DMA engine ready to retire write response.
+
+
 Read Address Channel
+====================
+
 Signal Name | Direction | Width | Function
-Signal Name
-Direction
-Width
-Function
-dma_m_axi_araddr | Output | 32 | DMA read address
-dma_m_axi_araddr
-Output
-32
-DMA read address
-dma_m_axi_arlen | Output | 8 | Read burst length
-dma_m_axi_arlen
-Output
-8
-Read burst length
-dma_m_axi_arsize | Output | 3 | Read transfer size
-dma_m_axi_arsize
-Output
-3
-Read transfer size
-dma_m_axi_arburst | Output | 2 | Read burst type
-dma_m_axi_arburst
-Output
-2
-Read burst type
-dma_m_axi_arvalid | Output | 1 | Read address valid
-dma_m_axi_arvalid
-Output
-1
-Read address valid
-dma_m_axi_arready | Input | 1 | Read address accepted
-dma_m_axi_arready
-Input
-1
-Read address accepted
+dma_m_axi_araddr | Output | 32 | DMA autonomous read source address.
+dma_m_axi_arlen | Output | 8 | DMA read burst length (up to 256 beats).
+dma_m_axi_arsize | Output | 3 | DMA read transfer beat size (64-bit = 3'b011).
+dma_m_axi_arburst | Output | 2 | Burst type (2'b01 = INCR incremental mode).
+dma_m_axi_arvalid | Output | 1 | DMA read address valid handshake strobe.
+dma_m_axi_arready | Input | 1 | Crossbar accepts DMA read address.
+
+
 Read Data Channel
+=================
+
 Signal Name | Direction | Width | Function
-Signal Name
-Direction
-Width
-Function
-dma_m_axi_rdata | Input | 64 | DMA read data
-dma_m_axi_rdata
-Input
-64
-DMA read data
-dma_m_axi_rresp | Input | 2 | Read response
-dma_m_axi_rresp
-Input
-2
-Read response
-dma_m_axi_rlast | Input | 1 | Last read beat
-dma_m_axi_rlast
-Input
-1
-Last read beat
-dma_m_axi_rvalid | Input | 1 | Read data valid
-dma_m_axi_rvalid
-Input
-1
-Read data valid
-dma_m_axi_rready | Output | 1 | Read data accepted
-dma_m_axi_rready
-Output
-1
-Read data accepted
-6. AXI4 ↔ System SRAM
+dma_m_axi_rdata | Input | 64 | DMA 64-bit read payload streamed from source slave.
+dma_m_axi_rresp | Input | 2 | Read status response code.
+dma_m_axi_rlast | Input | 1 | Last read beat indicator in burst transfer.
+dma_m_axi_rvalid | Input | 1 | Read data valid handshake strobe from slave.
+dma_m_axi_rready | Output | 1 | DMA engine ready to accept incoming data beat.
+
+
+6. AXI4 ↔ System SRAM (Slave Port M00)
+======================================
+
 Signal Group | Direction | Width | Function
-Signal Group
-Direction
-Width
-Function
-AXI4 Write Address | Interconnect → SRAM | AXI4 | SRAM write addressing
-AXI4 Write Address
-Interconnect → SRAM
-AXI4
-SRAM write addressing
-AXI4 Write Data | Interconnect → SRAM | 64 | SRAM write data
-AXI4 Write Data
-Interconnect → SRAM
-64
-SRAM write data
-AXI4 Write Response | SRAM → Interconnect | AXI4 | Write response
-AXI4 Write Response
-SRAM → Interconnect
-AXI4
-Write response
-AXI4 Read Address | Interconnect → SRAM | AXI4 | SRAM read addressing
-AXI4 Read Address
-Interconnect → SRAM
-AXI4
-SRAM read addressing
-AXI4 Read Data | SRAM → Interconnect | 64 | SRAM read data
-AXI4 Read Data
-SRAM → Interconnect
-64
-SRAM read data
-7. AXI4 ↔ SHA-256 Accelerator
+AXI4 Write Address (aw*) | Interconnect → SRAM | 32-bit addr, 8-bit len | SRAM write addressing, burst control, and handshake.
+AXI4 Write Data (w*) | Interconnect → SRAM | 64-bit data, 8-bit strb | 64-bit high-throughput SRAM write payload and byte enables.
+AXI4 Write Response (b*) | SRAM → Interconnect | 2-bit bresp | SRAM write completion acknowledgement.
+AXI4 Read Address (ar*) | Interconnect → SRAM | 32-bit addr, 8-bit len | SRAM read addressing, burst length, and handshake.
+AXI4 Read Data (r*) | SRAM → Interconnect | 64-bit data, 2-bit resp | 64-bit burst read data returned from shared memory.
+
+
+7. AXI4 ↔ SHA-256 Accelerator Data Plane (Slave Port M05)
+=========================================================
+
 Signal Name | Direction | Width | Function
-Signal Name
-Direction
-Width
-Function
-sha_axi_awaddr | Input | 32 | SHA write address
-sha_axi_awaddr
-Input
-32
-SHA write address
-sha_axi_awlen | Input | 8 | Write burst length
-sha_axi_awlen
-Input
-8
-Write burst length
-sha_axi_awsize | Input | 3 | Write transfer size
-sha_axi_awsize
-Input
-3
-Write transfer size
-sha_axi_awburst | Input | 2 | Write burst type
-sha_axi_awburst
-Input
-2
-Write burst type
-sha_axi_awvalid | Input | 1 | Write address valid
-sha_axi_awvalid
-Input
-1
-Write address valid
-sha_axi_awready | Output | 1 | Write address accepted
-sha_axi_awready
-Output
-1
-Write address accepted
-sha_axi_wdata | Input | 64 | Input payload data
-sha_axi_wdata
-Input
-64
-Input payload data
-sha_axi_wstrb | Input | 8 | Write byte strobes
-sha_axi_wstrb
-Input
-8
-Write byte strobes
-sha_axi_wlast | Input | 1 | Last data beat
-sha_axi_wlast
-Input
-1
-Last data beat
-sha_axi_wvalid | Input | 1 | Write data valid
-sha_axi_wvalid
-Input
-1
-Write data valid
-sha_axi_wready | Output | 1 | Write data accepted
-sha_axi_wready
-Output
-1
-Write data accepted
-sha_axi_bresp | Output | 2 | Write response
-sha_axi_bresp
-Output
-2
-Write response
-sha_axi_bvalid | Output | 1 | Write response valid
-sha_axi_bvalid
-Output
-1
-Write response valid
-sha_axi_bready | Input | 1 | Response accepted
-sha_axi_bready
-Input
-1
-Response accepted
-8. AXI4 ↔ AES-256 CBC Accelerator
-Input Data Interface
+sha_axi_awaddr | Input | 32 | SHA streaming write destination address (0x9000_0030).
+sha_axi_awlen | Input | 8 | Write burst length (8 beats = 64 bytes = 512-bit block).
+sha_axi_awsize | Input | 3 | Write beat transfer size (64-bit = 3'b011).
+sha_axi_awburst | Input | 2 | Burst mode (2'b01 = INCR).
+sha_axi_awvalid | Input | 1 | Address valid handshake from crossbar.
+sha_axi_awready | Output | 1 | SHA data-in FIFO accepts write address.
+sha_axi_wdata | Input | 64 | 64-bit telemetry message block data beat.
+sha_axi_wstrb | Input | 8 | Byte lane active strobes.
+sha_axi_wlast | Input | 1 | Indicates final beat of 512-bit message block.
+sha_axi_wvalid | Input | 1 | Write data beat valid handshake.
+sha_axi_wready | Output | 1 | SHA data FIFO accepts data beat.
+sha_axi_bresp | Output | 2 | Write status response code.
+sha_axi_bvalid | Output | 1 | Write response valid handshake.
+sha_axi_bready | Input | 1 | Master accepts write response.
+
+
+8. AXI4 ↔ AES-256 CBC Accelerator Data Plane (Ports M03 & M04)
+==============================================================
+
+Input Data Interface (Slave Port M03)
+=====================================
+
 Signal Name | Direction | Width | Function
-Signal Name
-Direction
-Width
-Function
-aes_axi_awaddr | Input | 32 | AES write address
-aes_axi_awaddr
-Input
-32
-AES write address
-aes_axi_awlen | Input | 8 | Write burst length
-aes_axi_awlen
-Input
-8
-Write burst length
-aes_axi_awsize | Input | 3 | Write transfer size
-aes_axi_awsize
-Input
-3
-Write transfer size
-aes_axi_awburst | Input | 2 | Write burst type
-aes_axi_awburst
-Input
-2
-Write burst type
-aes_axi_awvalid | Input | 1 | Write address valid
-aes_axi_awvalid
-Input
-1
-Write address valid
-aes_axi_awready | Output | 1 | Write address accepted
-aes_axi_awready
-Output
-1
-Write address accepted
-aes_axi_wdata | Input | 64 | Plaintext input data
-aes_axi_wdata
-Input
-64
-Plaintext input data
-aes_axi_wstrb | Input | 8 | Write byte strobes
-aes_axi_wstrb
-Input
-8
-Write byte strobes
-aes_axi_wlast | Input | 1 | Last input beat
-aes_axi_wlast
-Input
-1
-Last input beat
-aes_axi_wvalid | Input | 1 | Input data valid
-aes_axi_wvalid
-Input
-1
-Input data valid
-aes_axi_wready | Output | 1 | Input data accepted
-aes_axi_wready
-Output
-1
-Input data accepted
-aes_axi_bresp | Output | 2 | Write response
-aes_axi_bresp
-Output
-2
-Write response
-aes_axi_bvalid | Output | 1 | Write response valid
-aes_axi_bvalid
-Output
-1
-Write response valid
-aes_axi_bready | Input | 1 | Response accepted
-aes_axi_bready
-Input
-1
-Response accepted
-Output Data Interface
+aes_axi_awaddr | Input | 32 | AES streaming write target address (0x9000_0010).
+aes_axi_awlen | Input | 8 | Write burst length (2 beats = 16 bytes = 128-bit block).
+aes_axi_awsize | Input | 3 | Write beat transfer size (64-bit = 3'b011).
+aes_axi_awburst | Input | 2 | Burst mode (2'b01 = INCR).
+aes_axi_awvalid | Input | 1 | Address valid handshake from crossbar.
+aes_axi_awready | Output | 1 | AES data input FIFO accepts write address.
+aes_axi_wdata | Input | 64 | 64-bit telemetry plaintext block data beat.
+aes_axi_wstrb | Input | 8 | Byte lane active strobes.
+aes_axi_wlast | Input | 1 | Indicates final 64-bit beat of 128-bit block.
+aes_axi_wvalid | Input | 1 | Write data beat valid handshake.
+aes_axi_wready | Output | 1 | AES input FIFO accepts incoming data beat.
+aes_axi_bresp | Output | 2 | Write status response code.
+aes_axi_bvalid | Output | 1 | Write response valid handshake.
+aes_axi_bready | Input | 1 | Master accepts write response.
+
+
+Output Data Interface (Slave Port M04)
+======================================
+
 Signal Name | Direction | Width | Function
-Signal Name
-Direction
-Width
-Function
-aes_axi_rdata | Output | 64 | Ciphertext data
-aes_axi_rdata
-Output
-64
-Ciphertext data
-aes_axi_rvalid | Output | 1 | Ciphertext valid
-aes_axi_rvalid
-Output
-1
-Ciphertext valid
-aes_axi_rready | Input | 1 | Ciphertext accepted
-aes_axi_rready
-Input
-1
-Ciphertext accepted
-aes_axi_rlast | Output | 1 | Last ciphertext beat
-aes_axi_rlast
-Output
-1
-Last ciphertext beat
-9. AXI4-Lite Peripheral Control Interface
+aes_axi_araddr | Input | 32 | AES streaming read target address (0x9000_0020).
+aes_axi_arvalid | Input | 1 | Read address valid handshake.
+aes_axi_arready | Output | 1 | AES output FIFO accepts read address.
+aes_axi_rdata | Output | 64 | 64-bit encrypted ciphertext block data beat.
+aes_axi_rvalid | Output | 1 | Read data beat valid handshake from AES output FIFO.
+aes_axi_rready | Input | 1 | Master accepts incoming ciphertext beat.
+aes_axi_rlast | Output | 1 | Indicates final beat in ciphertext block transfer.
+
+
+9. AXI4-Lite Peripheral Control Subsystem (Slave Port M02)
+==========================================================
+The 64-bit AXI4 crossbar connects to an AXI-to-AXI-Lite protocol adaptation bridge (axi_to_axilite_bridge.v). The bridge strips full-AXI burst overhead, passes through 32-bit word addresses, truncates transaction IDs, and drives rlast = 1'b1 for single-beat register accesses. The peripheral control bus fans out across memory-mapped endpoints:
+
 Signal Name | Direction | Width | Function
-Signal Name
-Direction
-Width
-Function
-peri_axi_awaddr / peri_axi_araddr | Output | 32 | Peripheral register address
-peri_axi_awaddr / peri_axi_araddr
-Output
-32
-Peripheral register address
-peri_axi_awvalid / peri_axi_arvalid | Output | 1 | Peripheral select
-peri_axi_awvalid / peri_axi_arvalid
-Output
-1
-Peripheral select
-peri_axi_wvalid | Output | 1 | Transfer enable / valid
-peri_axi_wvalid
-Output
-1
-Transfer enable / valid
-peri_axi_write_en | Output | 1 | Read/write control
-peri_axi_write_en
-Output
-1
-Read/write control
-peri_axi_wdata | Output | 32 | Write data
-peri_axi_wdata
-Output
-32
-Write data
-peri_axi_wstrb | Output | 4 | Write byte strobes
-peri_axi_wstrb
-Output
-4
-Write byte strobes
-peri_axi_wready / peri_axi_rvalid | Input | 1 | Transfer completion
-peri_axi_wready / peri_axi_rvalid
-Input
-1
-Transfer completion
-peri_axi_rdata | Input | 32 | Read data
-peri_axi_rdata
-Input
-32
-Read data
-peri_axi_bresp[1] / peri_axi_rresp[1] | Input | 1 | AXI4-Lite transfer error (SLVERR)
-peri_axi_bresp[1] / peri_axi_rresp[1]
-Input
-1
-AXI4-Lite transfer error (SLVERR)
-10. AXI4-Lite ↔ Timer Controller
-Signal Name | Direction | Width | Function
-Signal Name
-Direction
-Width
-Function
-timer_irq | Output | 1 | Timer interrupt
-timer_irq
-Output
-1
-Timer interrupt
-peri_axi_awaddr / peri_axi_araddr | Input | 32 | Register address
-peri_axi_awaddr / peri_axi_araddr
-Input
-32
-Register address
-timer_axi_awvalid / timer_axi_arvalid | Input | 1 | Timer select
-timer_axi_awvalid / timer_axi_arvalid
-Input
-1
-Timer select
-peri_axi_wvalid | Input | 1 | Transfer enable / valid
-peri_axi_wvalid
-Input
-1
-Transfer enable / valid
-peri_axi_write_en | Input | 1 | Read/write control
-peri_axi_write_en
-Input
-1
-Read/write control
-peri_axi_wdata | Input | 32 | Configuration data
-peri_axi_wdata
-Input
-32
-Configuration data
-timer_axi_wready / timer_axi_rvalid | Output | 1 | Transfer ready
-timer_axi_wready / timer_axi_rvalid
-Output
-1
-Transfer ready
-timer_axi_rdata | Output | 32 | Timer read data
-timer_axi_rdata
-Output
-32
-Timer read data
-timer_axi_bresp[1] / timer_axi_rresp[1] | Output | 1 | Timer AXI4-Lite error (SLVERR)
-timer_axi_bresp[1] / timer_axi_rresp[1]
-Output
-1
-Timer AXI4-Lite error (SLVERR)
-11. AXI4-Lite ↔ UART Controller
-Signal Name | Direction | Width | Function
-Signal Name
-Direction
-Width
-Function
-peri_axi_awaddr / peri_axi_araddr | Input | 32 | UART register address
-peri_axi_awaddr / peri_axi_araddr
-Input
-32
-UART register address
-uart_axi_awvalid / uart_axi_arvalid | Input | 1 | UART select
-uart_axi_awvalid / uart_axi_arvalid
-Input
-1
-UART select
-peri_axi_wvalid | Input | 1 | Transfer enable / valid
-peri_axi_wvalid
-Input
-1
-Transfer enable / valid
-peri_axi_write_en | Input | 1 | Read/write control
-peri_axi_write_en
-Input
-1
-Read/write control
-peri_axi_wdata | Input | 32 | UART configuration/write data
-peri_axi_wdata
-Input
-32
-UART configuration/write data
-uart_axi_wready / uart_axi_rvalid | Output | 1 | Transfer ready
-uart_axi_wready / uart_axi_rvalid
-Output
-1
-Transfer ready
-uart_axi_rdata | Output | 32 | UART read data
-uart_axi_rdata
-Output
-32
-UART read data
-uart_axi_bresp[1] / uart_axi_rresp[1] | Output | 1 | UART AXI4-Lite error (SLVERR)
-uart_axi_bresp[1] / uart_axi_rresp[1]
-Output
-1
-UART AXI4-Lite error (SLVERR)
-uart_rx | Input | 1 | Serial receive data
-uart_rx
-Input
-1
-Serial receive data
-uart_tx | Output | 1 | Serial transmit data
-uart_tx
-Output
-1
-Serial transmit data
-12. AXI4-Lite ↔ GPIO Controller
-Signal Name | Direction | Width | Function
-Signal Name
-Direction
-Width
-Function
-peri_axi_awaddr / peri_axi_araddr | Input | 32 | GPIO register address
-peri_axi_awaddr / peri_axi_araddr
-Input
-32
-GPIO register address
-gpio_axi_awvalid / gpio_axi_arvalid | Input | 1 | GPIO select
-gpio_axi_awvalid / gpio_axi_arvalid
-Input
-1
-GPIO select
-peri_axi_wvalid | Input | 1 | Transfer enable / valid
-peri_axi_wvalid
-Input
-1
-Transfer enable / valid
-peri_axi_write_en | Input | 1 | Read/write control
-peri_axi_write_en
-Input
-1
-Read/write control
-peri_axi_wdata | Input | 32 | GPIO configuration/write data
-peri_axi_wdata
-Input
-32
-GPIO configuration/write data
-gpio_axi_wready / gpio_axi_rvalid | Output | 1 | Transfer ready
-gpio_axi_wready / gpio_axi_rvalid
-Output
-1
-Transfer ready
-gpio_axi_rdata | Output | 32 | GPIO read data
-gpio_axi_rdata
-Output
-32
-GPIO read data
-gpio_axi_bresp[1] / gpio_axi_rresp[1] | Output | 1 | GPIO AXI4-Lite error (SLVERR)
-gpio_axi_bresp[1] / gpio_axi_rresp[1]
-Output
-1
-GPIO AXI4-Lite error (SLVERR)
-gpio_in[15:0] | Input | 16 | External GPIO inputs
-gpio_in[15:0]
-Input
-16
-External GPIO inputs
-gpio_out[15:0] | Output | 16 | External GPIO outputs
-gpio_out[15:0]
-Output
-16
-External GPIO outputs
-13. AXI4-Lite ↔ DMA Controller
-Signal Name | Direction | Width | Function
-Signal Name
-Direction
-Width
-Function
-peri_axi_awaddr / peri_axi_araddr | Input | 32 | DMA register address
-peri_axi_awaddr / peri_axi_araddr
-Input
-32
-DMA register address
-dma_axi_awvalid / dma_axi_arvalid | Input | 1 | DMA select
-dma_axi_awvalid / dma_axi_arvalid
-Input
-1
-DMA select
-peri_axi_wvalid | Input | 1 | Transfer enable / valid
-peri_axi_wvalid
-Input
-1
-Transfer enable / valid
-peri_axi_write_en | Input | 1 | Read/write control
-peri_axi_write_en
-Input
-1
-Read/write control
-peri_axi_wdata | Input | 32 | DMA configuration data
-peri_axi_wdata
-Input
-32
-DMA configuration data
-dma_axi_wready / dma_axi_rvalid | Output | 1 | Transfer ready
-dma_axi_wready / dma_axi_rvalid
-Output
-1
-Transfer ready
-dma_axi_rdata | Output | 32 | DMA status/read data
-dma_axi_rdata
-Output
-32
-DMA status/read data
-dma_axi_bresp[1] / dma_axi_rresp[1] | Output | 1 | DMA AXI4-Lite error (SLVERR)
-dma_axi_bresp[1] / dma_axi_rresp[1]
-Output
-1
-DMA AXI4-Lite error (SLVERR)
-dma_done_irq | Output | 1 | DMA completion interrupt
-dma_done_irq
-Output
-1
-DMA completion interrupt
-dma_err_irq | Output | 1 | DMA error interrupt
-dma_err_irq
-Output
-1
-DMA error interrupt
-14. AXI4-Lite ↔ SHA-256 Accelerator Control
-Signal Name | Direction | Width | Function
-Signal Name
-Direction
-Width
-Function
-peri_axi_awaddr / peri_axi_araddr | Input | 32 | SHA register address
-peri_axi_awaddr / peri_axi_araddr
-Input
-32
-SHA register address
-sha_ctrl_awvalid / sha_ctrl_arvalid | Input | 1 | SHA select
-sha_ctrl_awvalid / sha_ctrl_arvalid
-Input
-1
-SHA select
-peri_axi_wvalid | Input | 1 | Transfer enable / valid
-peri_axi_wvalid
-Input
-1
-Transfer enable / valid
-peri_axi_write_en | Input | 1 | Read/write control
-peri_axi_write_en
-Input
-1
-Read/write control
-peri_axi_wdata | Input | 32 | SHA configuration/write data
-peri_axi_wdata
-Input
-32
-SHA configuration/write data
-sha_ctrl_wready / sha_ctrl_rvalid | Output | 1 | Transfer ready
-sha_ctrl_wready / sha_ctrl_rvalid
-Output
-1
-Transfer ready
-sha_ctrl_rdata | Output | 32 | SHA status/result data
-sha_ctrl_rdata
-Output
-32
-SHA status/result data
-sha_ctrl_bresp[1] / sha_ctrl_rresp[1] | Output | 1 | SHA AXI4-Lite error (SLVERR)
-sha_ctrl_bresp[1] / sha_ctrl_rresp[1]
-Output
-1
-SHA AXI4-Lite error (SLVERR)
-sha_done_irq | Output | 1 | SHA completion interrupt
-sha_done_irq
-Output
-1
-SHA completion interrupt
-15. AXI4-Lite ↔ AES-256 CBC Accelerator Control
-Signal Name | Direction | Width | Function
-Signal Name
-Direction
-Width
-Function
-peri_axi_awaddr / peri_axi_araddr | Input | 32 | AES register address
-peri_axi_awaddr / peri_axi_araddr
-Input
-32
-AES register address
-aes_ctrl_awvalid / aes_ctrl_arvalid | Input | 1 | AES select
-aes_ctrl_awvalid / aes_ctrl_arvalid
-Input
-1
-AES select
-peri_axi_wvalid | Input | 1 | Transfer enable / valid
-peri_axi_wvalid
-Input
-1
-Transfer enable / valid
-peri_axi_write_en | Input | 1 | Read/write control
-peri_axi_write_en
-Input
-1
-Read/write control
-peri_axi_wdata | Input | 32 | AES configuration/key/IV data
-peri_axi_wdata
-Input
-32
-AES configuration/key/IV data
-aes_ctrl_wready / aes_ctrl_rvalid | Output | 1 | Transfer ready
-aes_ctrl_wready / aes_ctrl_rvalid
-Output
-1
-Transfer ready
-aes_ctrl_rdata | Output | 32 | AES status/read data
-aes_ctrl_rdata
-Output
-32
-AES status/read data
-aes_ctrl_bresp[1] / aes_ctrl_rresp[1] | Output | 1 | AES AXI4-Lite error (SLVERR)
-aes_ctrl_bresp[1] / aes_ctrl_rresp[1]
-Output
-1
-AES AXI4-Lite error (SLVERR)
-aes_done_irq | Output | 1 | AES completion interrupt
-aes_done_irq
-Output
-1
-AES completion interrupt
-16. Cryptographic Data Interface Signals
+peri_axi_awaddr | Output | 32 | Peripheral memory-mapped register write address.
+peri_axi_awvalid | Output | 1 | Peripheral write address valid handshake.
+peri_axi_awready | Input | 1 | Target peripheral accepts write address.
+peri_axi_wdata | Output | 32 | 32-bit register write data.
+peri_axi_wstrb | Output | 4 | 4-bit byte-enable write strobes.
+peri_axi_wvalid | Output | 1 | Write data valid handshake.
+peri_axi_wready | Input | 1 | Target peripheral accepts write data.
+peri_axi_bresp | Input | 2 | Register write response status (2'b00 = OKAY).
+peri_axi_bvalid | Input | 1 | Write response valid handshake.
+peri_axi_bready | Output | 1 | Bridge accepts write response.
+peri_axi_araddr | Output | 32 | Peripheral memory-mapped register read address.
+peri_axi_arvalid | Output | 1 | Peripheral read address valid handshake.
+peri_axi_arready | Input | 1 | Target peripheral accepts read address.
+peri_axi_rdata | Input | 32 | 32-bit register read data.
+peri_axi_rresp | Input | 2 | Register read response status (2'b00 = OKAY).
+peri_axi_rvalid | Input | 1 | Read data valid handshake from peripheral.
+peri_axi_rready | Output | 1 | Bridge accepts read data word.
+
+
+10. Complete SoC Interrupt Mapping & PIC Vector Assignments
+===========================================================
+All peripheral interrupt request (IRQ) output lines are routed directly into the Western Digital VeeR-EL2 Programmable Interrupt Controller (PIC) gateway inputs (extintsrc_req[8:1]). The table below specifies the prioritized interrupt architecture:
+
+IRQ # | Source Module | Signal Name | Trigger Type | Priority | PIC Vector Reg | Functional Trigger Event
+IRQ 1 | UART Controller | uart_irq | Level / High | 5 | 0xF00C_0004 | RX FIFO data available / Line status error / TX holding register empty.
+IRQ 2 | System Timer | timer_intr[0] | Level / High | 7 | 0xF00C_0008 | 64-bit real-time counter compare match threshold reached.
+IRQ 3 | AES-256 Accelerator | aes_irq | Edge / Rising | 6 | 0xF00C_000C | AES CBC cipher operation complete across all programmed blocks.
+IRQ 4 | SHA-256 Accelerator | sha_irq | Edge / Rising | 6 | 0xF00C_0010 | SHA-256 message digest calculation complete and valid.
+IRQ 5 | DMA Controller | dma_done_o | Edge / Rising | 8 | 0xF00C_0014 | DMA block transfer finished across all enabled descriptors.
+IRQ 6 | DMA Controller | dma_error_o | Edge / Rising | 15 (Max) | 0xF00C_0018 | DMA AXI bus fault detected (SLVERR or DECERR abort).
+IRQ 7 | GPIO Bank 0 | gpio_intr[0] | Level / Edge | 4 | 0xF00C_001C | GPIO Pins [31:0] edge or level event detected.
+IRQ 8 | GPIO Bank 1 | gpio_intr[1] | Level / Edge | 4 | 0xF00C_0020 | GPIO Pins [63:32] edge or level event detected.
+
+
+11. Internal Clock and Reset Signals
+====================================
+
 Signal Name | Direction | Width | Source | Destination | Function
-Signal Name
-Direction
-Width
-Source
-Destination
-Function
-sha_data | Input | 64 | DMA | SHA-256 | SHA input payload data
-sha_data
-Input
-64
-DMA
-SHA-256
-SHA input payload data
-sha_data_valid | Input | 1 | DMA | SHA-256 | SHA input data valid
-sha_data_valid
-Input
-1
-DMA
-SHA-256
-SHA input data valid
-sha_data_ready | Output | 1 | SHA-256 | DMA | SHA accepts input data
-sha_data_ready
-Output
-1
-SHA-256
-DMA
-SHA accepts input data
-sha_data_last | Input | 1 | DMA | SHA-256 | End of SHA input stream
-sha_data_last
-Input
-1
-DMA
-SHA-256
-End of SHA input stream
-sha_digest[255:0] | Output | 256 | SHA-256 | Processor | SHA-256 digest
-sha_digest[255:0]
-Output
-256
-SHA-256
-Processor
-SHA-256 digest
-aes_data | Input | 64 | DMA | AES-256 | AES plaintext input
-aes_data
-Input
-64
-DMA
-AES-256
-AES plaintext input
-aes_data_valid | Input | 1 | DMA | AES-256 | AES input data valid
-aes_data_valid
-Input
-1
-DMA
-AES-256
-AES input data valid
-aes_data_ready | Output | 1 | AES-256 | DMA | AES accepts input data
-aes_data_ready
-Output
-1
-AES-256
-DMA
-AES accepts input data
-aes_data_last | Input | 1 | DMA | AES-256 | End of AES input stream
-aes_data_last
-Input
-1
-DMA
-AES-256
-End of AES input stream
-aes_ciphertext | Output | 64 | AES-256 | AXI4/SRAM | AES encrypted output
-aes_ciphertext
-Output
-64
-AES-256
-AXI4/SRAM
-AES encrypted output
-aes_ciphertext_valid | Output | 1 | AES-256 | AXI4 | Ciphertext valid
-aes_ciphertext_valid
-Output
-1
-AES-256
-AXI4
-Ciphertext valid
-aes_ciphertext_ready | Input | 1 | AXI4 | AES-256 | Ciphertext accepted
-aes_ciphertext_ready
-Input
-1
-AXI4
-AES-256
-Ciphertext accepted
-aes_ciphertext_last | Output | 1 | AES-256 | AXI4 | Last ciphertext beat
-aes_ciphertext_last
-Output
-1
-AES-256
-AXI4
-Last ciphertext beat
-17. Interrupt Signals
-Signal Name | Direction | Width | Source | Destination | Function
-Signal Name
-Direction
-Width
-Source
-Destination
-Function
-timer_irq | Output | 1 | Timer | PIC | Timer event interrupt
-timer_irq
-Output
-1
-Timer
-PIC
-Timer event interrupt
-dma_done_irq | Output | 1 | DMA | PIC | DMA completion interrupt
-dma_done_irq
-Output
-1
-DMA
-PIC
-DMA completion interrupt
-dma_err_irq | Output | 1 | DMA | PIC | DMA error interrupt
-dma_err_irq
-Output
-1
-DMA
-PIC
-DMA error interrupt
-sha_done_irq | Output | 1 | SHA-256 | PIC | SHA completion interrupt
-sha_done_irq
-Output
-1
-SHA-256
-PIC
-SHA completion interrupt
-aes_done_irq | Output | 1 | AES-256 | PIC | AES completion interrupt
-aes_done_irq
-Output
-1
-AES-256
-PIC
-AES completion interrupt
-extintsrc_req | Output | N | PIC | VeeR EL2 | External interrupt request
-extintsrc_req
-Output
-N
-PIC
-VeeR EL2
-External interrupt request
-18. Internal Clock and Reset Signals
-Signal Name | Direction | Width | Source | Destination | Function
-Signal Name
-Direction
-Width
-Source
-Destination
-Function
-clk | Internal | 1 | Clock Network | SoC Blocks | Distributed system clock
-clk
-Internal
-1
-Clock Network
-SoC Blocks
-Distributed system clock
-rst_n | Internal | 1 | Reset Network | SoC Blocks | Distributed active-low reset
-rst_n
-Internal
-1
-Reset Network
-SoC Blocks
-Distributed active-low reset
-4. Control Path and System Coordination
-The control path defines how the VeeR EL2 core orchestrates system operations across the unified AXI4/AXI4-Lite interconnect architecture. Both high-throughput data movement and peripheral control-plane register configuration are carried over the 64-bit AXI4 interconnect. Peripherals with lightweight register interfaces are connected via AXI4-Lite slave ports.
-4.1 System Control Topology
-Control and configuration transactions originate from the core and are exchanged with peripherals through the control-plane hierarchy.
-Downward Configuration Flow: Control flows from the VeeR EL2 Core through its LSU master interface across the 64-bit AMBA AXI4 interconnect directly to the AXI4-Lite slave interfaces of individual peripherals and accelerators (Timer, UART, GPIO, DMA, SHA-256, and AES-256 control registers).
-Upward Event Flow: Hardware event notifications flow upward from these endpoints into the Programmable Interrupt Controller (PIC), which drives the VeeR EL2 core's external interrupt vector (extintsrc_req). This triggers the execution of the corresponding Interrupt Service Routine (ISR), followed by status register readback, event clearance, and the resumption of the main execution flow.
-4.2 Step-by-Step Operational Control Sequences
+clk | Internal | 1 | Clock Distribution | All SoC Blocks | Distributed 50/100 MHz synchronous system clock.
+uart_clk | Internal | 1 | Clock Distribution | UART Controller | Distributed 50 MHz baud-rate reference clock.
+rst_n | Internal | 1 | Reset Generator | All Peripheral Blocks | Distributed active-low synchronous reset (aresetn).
+rst | Internal | 1 | Reset Inverter | AXI Crossbar Core | Distributed active-high reset (rst = ~aresetn) required by interconnect core.
+
+
+4. Master System Address Map & Memory Architecture
+==================================================
+
+4.1 Global 4 GB SoC Memory Map
+==============================
+The 32-bit physical address space (4 GB) is partitioned into functional regions optimized for low-latency CPU local memory execution, high-bandwidth streaming DMA transfers, and memory-mapped peripheral control.
+
+Base Address | End Address | Size | Bus Interface | Port | Access | Master | Description
+0x0000_0000 | 0x0000_FFFF | 64 KB | AXI4 (64-bit) | m00 | R/W | CPU, DMA | System SRAM:  Shared telemetry frame buffer, DMA staging area, packet queue.
+0x4000_0000 | 0x4000_00FF | 256 B | AXI4-Lite (32-bit) | m02 | R/W | CPU, DMA | AES-256 Accelerator:  Control, status, 256-bit keys, IV, block count registers.
+0x4000_1000 | 0x4000_10FF | 256 B | AXI4-Lite (32-bit) | m02 | R/W | CPU | UART Controller:  16550-compatible serial port, 16-byte FIFOs, baud divisor.
+0x4000_2000 | 0x4000_2FFF | 4 KB | AXI4-Lite (32-bit) | m02 | R/W | CPU | System Timer (rv_timer):  64-bit real-time counter, prescaler, comparator.
+0x4000_3000 | 0x4000_3FFF | 4 KB | AXI4-Lite (32-bit) | m02 | R/W | CPU | GPIO Controller:  64 General-Purpose I/O pins, atomic set/clear/toggle, IRQs.
+0x4000_4000 | 0x4000_40FF | 256 B | AXI4-Lite (32-bit) | m02 | R/W | CPU, DMA | SHA-256 Hash Accelerator:  Control, status, 512-bit block buffer, 256-bit digest.
+0x4000_5000 | 0x4000_50FF | 256 B | AXI4-Lite (32-bit) | m02 | R/W | CPU | DMA Controller:  Control, status, fault address, dual 64-bit descriptors.
+0x4000_6000 | 0x4FFF_FFFF | ~256 MB | AXI4-Lite (32-bit) | m02 | — | — | Reserved Peripheral Expansion Space.
+0x8000_0000 | 0x8000_0FFF | 4 KB | AXI4 (64-bit) | m01 | R/X | CPU | Boot ROM / Reset Vector:  Power-on reset entry point, primary bootloader.
+0x9000_0010 | 0x9000_001F | 16 B | AXI4 (64-bit) | m03 | W | CPU, DMA | AES-256 Data In Endpoint:  High-speed burst streaming write target FIFO.
+0x9000_0020 | 0x9000_002F | 16 B | AXI4 (64-bit) | m04 | R | CPU, DMA | AES-256 Data Out Endpoint:  High-speed burst streaming read target FIFO.
+0x9000_0030 | 0x9000_003F | 16 B | AXI4 (64-bit) | m05 | W | CPU, DMA | SHA-256 Data In Endpoint:  High-speed burst streaming write target FIFO.
+
+
+4.2 System SRAM Memory Map & Partitioning (64 KB)
+=================================================
+The 64 KB System SRAM (0x0000_0000 – 0x0000_FFFF) serves as the primary on-chip staging area, decoupling external low-speed ingress/egress from multi-megabyte cryptographic compute engines. It is partitioned into four dedicated 16 KB functional regions:
+
+Address Range | Size | Buffer Function | Firmware Allocation & Operational Usage
+0x0000_0000 – 0x0000_3FFF | 16 KB | Telemetry Ingress Buffer | Raw incoming telemetry packet frames transferred from UART RX FIFOs by CPU/DMA.
+0x0000_4000 – 0x0000_7FFF | 16 KB | Cryptographic Staging Buffer | Pre-processed plaintext staging and destination for decrypted/encrypted AES payloads.
+0x0000_8000 – 0x0000_BFFF | 16 KB | SHA-256 Scratchpad | Pre-padded message blocks (512-bit multiples) for hardware SHA digest verification.
+0x0000_C000 – 0x0000_FFFF | 16 KB | Telemetry Egress Buffer & Descriptors | Finalized encrypted ciphertext packets awaiting serial transmission, and DMA descriptor memory.
+
+
+4.3 VeeR-EL2 Processor Core Memory & PIC Subsystem
+==================================================
+
+Region / Register Window | Base Address | Size / Bits | Access | Functional Description
+Reset Vector (RV_RESET_VEC) | 0x8000_0000 | Entry Point | R/X | Power-on CPU instruction fetch destination (Boot ROM entry).
+ICCM (Instruction Memory) | 0xEE00_0000 | 128 KB | R/W/X | Single-cycle local instruction RAM with ECC protection (RV_ICCM_BITS=17).
+DCCM (Data Scratchpad) | 0xF004_0000 | 128 KB | R/W | Single-cycle local data scratchpad for stack, heap, and fast variables (RV_DCCM_BITS=17).
+PIC Base Window | 0xF00C_0000 | 64 KB | R/W | VeeR-EL2 Programmable Interrupt Controller configuration and gateway registers.
+PIC MEIPL[1..8] | 0xF00C_0004..20 | 8 × 32-bit | R/W | Interrupt priority levels (0 to 15) for external interrupt request lines 1 through 8.
+PIC MEIP[0] | 0xF00C_1000 | 32-bit | RO | Interrupt pending status flags for IRQs 1 through 8.
+PIC MEIE[0] | 0xF00C_2000 | 32-bit | R/W | Interrupt enable bits for external interrupt gateway lines 1 through 8.
+PIC MEIGWCTRL[1..8] | 0xF00C_4004..20 | 8 × 32-bit | R/W | Gateway configuration: bit 0 = Polarity (1=High, 0=Low), bit 1 = Type (1=Edge, 0=Level).
+PIC MEIGWCLR[1..8] | 0xF00C_5004..20 | 8 × 32-bit | WO | Gateway interrupt clear: Write 1 to clear pending edge-triggered interrupt.
+
+
+5. Subsystem Register Specifications
+====================================
+
+5.1 AES-256 Cryptographic Accelerator (Base: 0x4000_0000)
+=========================================================
+The AES-256 accelerator performs high-speed block encryption and decryption adhering to FIPS-197. It implements a 14-round transformation pipeline with autonomous Cipher Block Chaining (CBC) feedback logic, 256-bit key expansion, and 128-bit Initialization Vector (IV) register integration.
+
+Offset | Register Name | Width | Type | Reset Value | Field Descriptions & Functional Purpose
+0x00 | AES_CTRL | 32-bit | R/W | 0x0000_0000 | [0]  start : Write 1 to start cipher operation. [1]  enc_dec : 0 = Encrypt, 1 = Decrypt. [2]  cbc_mode : 1 = Enable CBC mode (IV chaining), 0 = ECB mode. [3]  key_len : 1 = 256-bit key (14 rounds), 0 = 128-bit key (10 rounds). [4]  irq_en : 1 = Assert  aes_irq  on completion. [5]  soft_rst : Write 1 to reset internal state and FIFOs.
+0x04 | AES_STATUS | 32-bit | RO | 0x0000_0000 | [0]  busy : High while round transformations are in progress. [1]  done : Asserted when all blocks in  AES_BLK_CNT  finish. [2]  key_ready : Key expansion schedule complete. [3]  err : FIFO overrun or illegal configuration detected.
+0x08 | AES_BLK_CNT | 32-bit | R/W | 0x0000_0001 | [15:0]  block_count : Total number of 128-bit blocks to process in active burst.
+0x0C | AES_IRQ_CLR | 32-bit | WO | 0x0000_0000 | [0]  irq_clr : Write 1 to clear  done  status flag and de-assert  aes_irq .
+0x10–0x2C | AES_KEY0–7 | 8×32 | WO | 0x0000_0000 | 256-bit Cipher Key: KEY0 (bits [31:0]) through KEY7 (bits [255:224]).
+0x30–0x3C | AES_IV0–3 | 4×32 | R/W | 0x0000_0000 | 128-bit Initialization Vector: IV0 (bits [31:0]) through IV3 (bits [127:96]).
+0x40–0x4C | AES_DIN0–3 | 4×32 | WO | 0x0000_0000 | 128-bit Direct Plaintext Input Register (AXI-Lite CPU direct access bypass).
+0x50–0x5C | AES_DOUT0–3 | 4×32 | RO | 0x0000_0000 | 128-bit Direct Ciphertext Output Register (AXI-Lite CPU direct access bypass).
+
+
+5.2 SHA-256 Cryptographic Hash Accelerator (Base: 0x4000_4000)
+==============================================================
+The SHA-256 accelerator implements the Secure Hash Algorithm specified in FIPS 180-4. It computes a 256-bit message digest across arbitrary-length telemetry payloads by iterating over 512-bit message blocks.
+
+Offset | Register Name | Width | Type | Reset Value | Field Descriptions & Functional Purpose
+0x00 | SHA_CTRL | 32-bit | R/W | 0x0000_0000 | [0]  init : Write 1 to load standard initial hash values H(0)..H(7). [1]  next : Write 1 to hash the next 512-bit block. [2]  mode : 1 = SHA-256, 0 = SHA-224. [3]  irq_en : 1 = Assert  sha_irq  when digest is computed. [4]  soft_rst : Write 1 to reset internal state and clear working registers.
+0x04 | SHA_STATUS | 32-bit | RO | 0x0000_0001 | [0]  ready : Core is idle and ready to accept the next 512-bit block. [1]  valid : Final 256-bit digest computation complete and valid in DIGEST0..7. [2]  busy : 64-round compression function currently active.
+0x08 | SHA_BLOCK_COUNT | 32-bit | R/W | 0x0000_0001 | [15:0]  block_count : Total number of 512-bit blocks in current message stream.
+0x0C | SHA_MSG_BYTE_LEN | 32-bit | R/W | 0x0000_0000 | [31:0]  byte_len : Total message length in bytes prior to padding.
+0x10 | SHA_DATA_IN | 32-bit | WO | 0x0000_0000 | [31:0]  data_word : Direct CPU write port for sequential 512-bit block loading (16 words).
+0x20–0x3C | SHA_DIGEST0–7 | 8×32 | RO | 0x0000_0000 | Final 256-bit Digest Result: DIGEST0 (H0: bits [255:224]) through DIGEST7 (H7: bits [31:0]).
+
+
+5.3 DMA Controller & Dual Descriptor Engine (Base: 0x4000_5000)
+===============================================================
+The DMA engine performs autonomous, high-throughput memory-to-memory and memory-to-peripheral block data transfers over the 64-bit AXI4 crossbar. It supports programmable burst lengths (up to 256 beats), dual descriptor chaining, fixed FIFO streaming, and bus fault trapping.
+
+Offset | Register Name | Width | Type | Reset Value | Field Descriptions & Functional Purpose
+0x00 | DMA_CONTROL | 32-bit | R/W | 0x0000_03FC | [0]  go : Write 1 to launch DMA execution across enabled descriptors. [1]  abort : Write 1 to abort active transfer immediately. [9:2]  max_burst : Maximum AXI burst length ALEN (0x00 = 1 beat, 0xFF = 256 beats). Default = 16 beats.
+0x08 | DMA_STATUS | 32-bit | RO | 0x0000_CAFE | [15:0]  version : Hardware IP signature (reads  0xCAFE ). [16]  done : Asserted when all enabled descriptors finish. [17]  error : Asserted on AXI bus fault (SLVERR/DECERR) or misaligned parameter. [18]  busy : DMA master actively issuing AXI bus read/write requests.
+0x10 | DMA_ERROR_ADDR | 32-bit | RO | 0x0000_0000 | [31:0]  fault_addr : Exact 32-bit bus address that triggered an AXI slave error response.
+0x20 | DMA_DESC0_SRC | 32-bit | R/W | 0x0000_0000 | Descriptor 0 32-bit Source Base Address.
+0x24 | DMA_DESC0_DST | 32-bit | R/W | 0x0000_0000 | Descriptor 0 32-bit Destination Base Address.
+0x28 | DMA_DESC0_BYTES | 32-bit | R/W | 0x0000_0000 | Total Transfer Length in Bytes (up to 4 GB).
+0x2C | DMA_DESC0_BURST | 32-bit | R/W | 0x0000_0010 | AXI Burst Length for Descriptor 0 (default = 16 beats).
+0x30 | DMA_DESC0_CFG | 32-bit | R/W | 0x0000_0000 | [0]  src_mode : 0 = Incrementing address, 1 = Fixed (FIFO endpoint). [1]  dst_mode : 0 = Incrementing address, 1 = Fixed (FIFO endpoint). [2]  enable : 1 = Descriptor 0 valid for execution. [3]  irq_en : 1 = Assert  dma_done_o  on Descriptor 0 completion.
+0x40–0x50 | DMA_DESC1_* | 5×32 | R/W | 0x0000_0000 | Descriptor 1 configuration registers (identical structure to Descriptor 0).
+
+
+5.4 UART Serial Controller (Base: 0x4000_1000)
+==============================================
+The UART peripheral implements a standard 16550-compatible serial communications interface with 16-byte internal transmit and receive FIFOs, programmable baud rate divisor, line status monitoring, and interrupt generation.
+
+Offset | Register Name | Access | Reset Value | Field Descriptions & Functional Purpose
+0x00  (DLAB=0) | UART_RBR / THR | R / W | 0x0000_0000 | Read: Receiver Buffer Register (RBR) — pops oldest byte from RX FIFO. Write: Transmitter Holding Register (THR) — pushes byte into TX FIFO.
+0x00  (DLAB=1) | UART_DLL | R/W | 0x0000_0000 | Divisor Latch LSB: Lower 8 bits of 16-bit baud rate divisor.
+0x04  (DLAB=0) | UART_IER | R/W | 0x0000_0000 | [0]  rx_data_ready_en : Enable Received Data Available Interrupt. [1]  tx_empty_en : Enable Transmitter Holding Register Empty Interrupt. [2]  rx_line_status_en : Enable Receiver Line Status Interrupt (parity/framing error).
+0x04  (DLAB=1) | UART_DLM | R/W | 0x0000_0000 | Divisor Latch MSB: Upper 8 bits of 16-bit baud rate divisor.
+0x08 | UART_IIR / FCR | R / W | 0x0000_0001 | Read (IIR): Interrupt Identification Register. Write (FCR): [0] FIFO Enable, [1] Clear RX FIFO, [2] Clear TX FIFO.
+0x0C | UART_LCR | R/W | 0x0000_0000 | [1:0] Word Length: 2'b11 = 8 data bits. [2] Stop Bits: 0 = 1 stop bit, 1 = 2 stop bits. [3] Parity Enable: 0 = Disabled, 1 = Enabled. [7]  DLAB : Divisor Latch Access Bit (1 = DLL/DLM accessible, 0 = RBR/THR/IER).
+0x14 | UART_LSR | RO | 0x0000_0060 | [0]  dr : Data Ready (1 = Valid byte present in RX FIFO). [1]  oe : Overrun Error. [2]  pe : Parity Error. [3]  fe : Framing Error. [5]  thre : Transmitter Holding Register Empty (1 = Ready for next TX byte). [6]  temt : Transmitter Empty (both THR and shift register empty).
+
+Baud Divisor Formula: Divisor = F_uart_clk / (16 × Desired_Baud) Example: For F_uart_clk = 50 MHz and Baud = 115,200 bps: Divisor = 50,000,000 / (16 × 115,200) = 27.127 ≈ 27 (DLL = 0x1B, DLM = 0x00) With 50 MHz bus reference: 434 (0x01B2) yields 115,207 bps (0.006% error).
+
+5.5 System Timer Subsystem (rv_timer, Base: 0x4000_2000)
+========================================================
+The system timer peripheral implements a 64-bit real-time monotonic counter with a 12-bit programmable prescaler, increment step configurability, 64-bit compare match threshold register, and edge/level interrupt generation.
+
+Offset | Register Name | Width | Type | Reset Value | Field Descriptions & Functional Purpose
+0x000 | ALERT_TEST | 32-bit | WO | 0x0000_0000 | [0]  fatal_fault : Write 1 to trigger fatal alert diagnostic interrupt test.
+0x004 | CTRL | 32-bit | R/W | 0x0000_0000 | [0]  active : 1 = Timer enabled; 64-bit counter increments on configured prescaler ticks.
+0x100 | INTR_ENABLE0 | 32-bit | R/W | 0x0000_0000 | [0]  timer_expired_en : Enable timer expiration interrupt to PIC.
+0x104 | INTR_STATE0 | 32-bit | RW1C | 0x0000_0000 | [0]  timer_expired : Interrupt pending flag. Write 1 to clear.
+0x108 | INTR_TEST0 | 32-bit | WO | 0x0000_0000 | [0]  timer_expired_test : Write 1 to software-force timer expiration interrupt.
+0x10C | CFG0 | 32-bit | R/W | 0x0000_0000 | [11:0]  prescale : Prescaler divisor (Counter ticks every  prescale + 1  clocks). [23:16]  step : Value added to 64-bit counter on each tick (default = 1).
+0x110 | TIMER_V_LOWER0 | 32-bit | R/W | 0x0000_0000 | Lower 32 bits [31:0] of 64-bit real-time counter value.
+0x114 | TIMER_V_UPPER0 | 32-bit | R/W | 0x0000_0000 | Upper 32 bits [63:32] of 64-bit real-time counter value.
+0x118 | COMPARE_LOWER0_0 | 32-bit | R/W | 0xFFFF_FFFF | Lower 32 bits [31:0] of 64-bit compare match threshold.
+0x11C | COMPARE_UPPER0_0 | 32-bit | R/W | 0xFFFF_FFFF | Upper 32 bits [63:32] of 64-bit compare match threshold.
+
+
+5.6 64-Pin GPIO Controller (Base: 0x4000_3000)
+==============================================
+The GPIO subsystem manages 64 independent digital I/O pins partitioned into Bank 0 (pins [31:0]) and Bank 1 (pins [63:32]). It includes 2-stage input synchronizers to prevent metastability, atomic bit manipulation registers (Set, Clear, Toggle) that eliminate software read-modify-write races, and per-pin edge/level interrupt generation.
+
+Offset | Register Name | Width | Type | Pins Covered | Functional Purpose & Operational Usage
+0x000 | GPIO_INFO | 32-bit | RO | All [63:0] | Hardware info register: Reads decimal 64 (implemented pin count).
+0x004 | GPIO_CFG | 32-bit | R/W | Global | Global configuration (push-pull vs open-drain drive mode).
+0x080 / 0x084 | GPIO_EN_0 / EN_1 | 32-bit | R/W | [31:0] / [63:32] | Direction control: 1 = Output drive enabled, 0 = High-Z / Input mode.
+0x100 / 0x104 | GPIO_IN_0 / IN_1 | 32-bit | RO | [31:0] / [63:32] | Sampled raw synchronized input pin states.
+0x180 / 0x184 | GPIO_OUT_0 / OUT_1 | 32-bit | R/W | [31:0] / [63:32] | Output data register: Sets drive level when pin is enabled as output.
+0x200 / 0x204 | GPIO_SET_0 / SET_1 | 32-bit | WO | [31:0] / [63:32] | Atomic Bit Set: Writing 1 drives corresponding pin HIGH without R-M-W.
+0x280 / 0x284 | GPIO_CLR_0 / CLR_1 | 32-bit | WO | [31:0] / [63:32] | Atomic Bit Clear: Writing 1 drives corresponding pin LOW without R-M-W.
+0x300 / 0x304 | GPIO_TOGGLE_0 / 1 | 32-bit | WO | [31:0] / [63:32] | Atomic Bit Toggle: Writing 1 inverts current state of corresponding pin.
+0x380 / 0x384 | INTRPT_RISE_EN_0 / 1 | 32-bit | R/W | [31:0] / [63:32] | Rising-edge transition interrupt enable per pin.
+0x400 / 0x404 | INTRPT_FALL_EN_0 / 1 | 32-bit | R/W | [31:0] / [63:32] | Falling-edge transition interrupt enable per pin.
+0x480 / 0x484 | INTRPT_HIGH_EN_0 / 1 | 32-bit | R/W | [31:0] / [63:32] | Active-high level-sensitive interrupt enable per pin.
+0x500 / 0x504 | INTRPT_LOW_EN_0 / 1 | 32-bit | R/W | [31:0] / [63:32] | Active-low level-sensitive interrupt enable per pin.
+0x580 / 0x584 | INTRPT_STATUS_0 / 1 | 32-bit | RW1C | [31:0] / [63:32] | Cumulative interrupt pending status. Write 1 to clear pending flag.
+
+
+6. Control Path and System Coordination
+=======================================
+
+6.1 System Control Topology
+===========================
+The control path defines how the Western Digital VeeR EL2 core orchestrates system operations across the unified AXI4/AXI4-Lite interconnect architecture. Both high-throughput data movement and peripheral control-plane register configurations are carried over the 64-bit AXI4 crossbar. Peripherals with lightweight register interfaces are connected via AXI4-Lite subordinate ports through protocol bridges.
+Downward Configuration Flow: Control transactions originate from the VeeR EL2 Core through its Load/Store Unit (LSU) master interface across the 64-bit AMBA AXI4 interconnect directly to the AXI4-Lite slave interfaces of individual peripherals and accelerators (Timer at 0x4000_2000, UART at 0x4000_1000, GPIO at 0x4000_3000, DMA at 0x4000_5000, SHA-256 at 0x4000_4000, and AES-256 at 0x4000_0000).
+Upward Event Flow: Hardware event notifications flow upward from these endpoints into the Programmable Interrupt Controller (PIC), which asserts the VeeR EL2 core's external interrupt vector (extintsrc_req). This triggers the execution of the corresponding Interrupt Service Routine (ISR), followed by status register readback, event clearance via write-1-to-clear registers, and resumption of background execution.
+
+6.2 Step-by-Step Operational Control Sequences
+==============================================
+
 A. General Peripheral and Accelerator Initialization Sequence
-Step 1: The VeeR EL2 core issues memory-mapped I/O write requests across the AXI4 interconnect to the AXI4-Lite slave interfaces of peripheral control registers.
-Step 2: Firmware programs operating modes, intervals for the system timer, baud rates for the UART, and cryptographic parameters such as AES keys and initialization vectors.
-Step 3: Software sets active and enable bits in the respective peripheral control registers to start operation.
+=============================================================
+
 B. Autonomous DMA Control Sequence
-Step 1: Firmware programs the DMA transfer source address, destination address, and size parameters via the DMA controller’s AXI4-Lite control interface.
-Step 2: Software writes the start command to the DMA control register.
-Step 3: The DMA controller operates independently as an AXI4 master and initiates the programmed data transfers without CPU-driven data movement.
-Step 4: Data moves independently between System SRAM and the target hardware endpoint.
-Step 5: Upon completion of the programmed transfer or detection of a transfer error, the DMA controller asserts dma_done_irq or dma_err_irq, respectively.
-Step 6: The event propagates through the PIC to the VeeR EL2 core.
-Step 7: The core executes the DMA service routine to read status flags, clear the interrupt, and release the buffer for the next task.
+==================================
+
 C. Cryptographic Accelerator Control Sequence
-Step 1: Firmware configures the cryptographic accelerator and DMA transfer parameters required for the operation, including cryptographic configuration and transfer parameters.
-Step 2: Firmware enables or initiates the required cryptographic operation and starts the associated data-transfer operation.
-Step 3: The configured hardware performs data movement and cryptographic processing independently of core intervention.
-Step 4: Upon finalizing the message digest or block cipher transformation, the block asserts sha_done_irq or aes_done_irq.
-Step 5: The PIC routes the completion signal to the VeeR EL2 core.
-Step 6: The CPU services the corresponding interrupt, reads the relevant completion and status information and, where required, retrieves the cryptographic result before continuing the processing flow.
-5. Data Path
-5.1 Data-Path Overview
-[Ingress Path]
-External Host ──► Serial Line ──► UART ──► AXI4-Lite ──► VeeR EL2 Core ──► AXI4 ──► System SRAM
-[Data Movement & Processing]
-System SRAM ──► AXI4 ──► DMA Controller ──┬──► SHA-256 ──► Digest ──► AXI4-Lite / CPU Readback
-│
-└──► AES-256 CBC ──► Ciphertext ──► System SRAM
-[Egress Path]
-System SRAM ──► VeeR EL2 (LSU) ──► AXI4-Lite ──► UART ──► Serial Line ──► External Host
-The data path consists of two cryptographic processing branches. The SHA-256 branch produces an integrity digest, while the AES-256 CBC branch produces the encrypted payload. The architecture does not assume that the SHA-256 output is directly connected to the AES-256 input unless such a dependency is explicitly defined. The DMA controller performs the required transfers between System SRAM and the respective cryptographic accelerator interfaces. The SHA-256 and AES-256 paths are independent processing branches and are not assumed to operate simultaneously unless explicitly scheduled by the system control flow.
-5.2 Data Ingress
-Ingress Source: The data path begins at the external host, which supplies raw telemetry payloads, configuration frames, or command streams across the serial communication line.
-Ingress Interface: The physical UART controller receives the serial data stream and buffers incoming bytes into its internal receive holding registers accessible via the UART’s AXI4-Lite control interface.
-Transport Mechanism: The VeeR EL2 core retrieves received data from the UART controller through memory-mapped register accesses over the AXI4 interconnect via the UART’s AXI4-Lite slave interface.
-Initial Storage Destination: The core then issues write transactions through its AXI4 LSU master interface across the 64-bit interconnect to deposit the telemetry bytes directly into the System SRAM staging buffer, establishing the base payload for subsequent processing branches.
-5.3 SRAM as the Data Buffer
-Buffer Role: The System SRAM serves as the primary on-chip staging area and memory-mapped repository where raw telemetry payloads, intermediate processing blocks, and final encrypted outputs reside.
-Interface Access: Both the VeeR EL2 core via its LSU interface and the DMA controller access the SRAM as central memory slaves over the 64-bit AMBA AXI4 interconnect.
-Functional Purpose: It decouples the ingress and egress routines from high-speed cryptographic and transfer operations by providing stable, addressable memory ranges.
-Operational Boundary: The SRAM provides addressable storage for telemetry payloads, intermediate data, and encrypted results accessed through the AXI4 interconnect.
-5.4 DMA Data Movement
-Transfer Source: The DMA controller reads payload data from configured base addresses residing within the System SRAM.
-Transport Mechanism: Operating as an independent AXI4 master on the system interconnect, the DMA controller executes block data transfers without requiring byte-by-byte CPU intervention.
-Execution Processing: The DMA controller operates using transfer parameters configured through its control interface and manages the programmed data movement autonomously while signaling completion or error states via separate interrupt lines to the PIC.
-Transfer Destinations: Supported architectural transfers map explicitly to the hardware endpoints:
-System SRAM to SHA-256 accelerator data interface for integrity verification.
-System SRAM to AES-256 CBC engine data interface for block cipher transformation.
-AES-256 CBC engine to System SRAM for writing back finalized ciphertext results.
-5.5 SHA-256 Data Path
-Data Source: Buffered plaintext telemetry blocks residing in System SRAM.
-Transport Mechanism: The DMA controller streams these blocks across the AXI4 interconnect directly into the SHA-256 accelerator data interface.
-Processing Operation: The hardware accelerator computes the cryptographic message digest entirely through dedicated internal logic without modifying the underlying data blocks.
-Result Destination: The resulting 256-bit hash digest is held in internal accelerator result registers, from which it is retrieved by the processor through the accelerator's control interface.
-5.6 AES-256 Data Path
-Data Source: Plaintext telemetry payload blocks stored within System SRAM.
-Transport Mechanism: The DMA controller reads and streams the plaintext blocks over the AXI4 interconnect into the AES-256 CBC engine data interface.
-Processing Operation: Operating in Cipher Block Chaining mode, the engine combines incoming plaintext blocks with an Initialization Vector (IV) and a pre-loaded 256-bit key, chaining ciphertext dependencies across sequential transformation cycles.
-Result Destination: The resulting encrypted ciphertext blocks are written back across the AXI4 interconnect and stored in a designated result buffer within System SRAM.
-5.7 Data Egress
-Egress Source: Finalized, encrypted payload blocks residing within the System SRAM result buffers.
-Transport Mechanism: Under firmware direction, the VeeR EL2 core reads the secured payload from SRAM using its AXI4 LSU interface and directs it toward the UART control registers via the AXI4 interconnect through the UART’s AXI4-Lite slave interface.
-Processing Operation: The UART controller accepts the bytes through AXI4-Lite register writes and serializes the data stream according to pre-configured baud rates and frame formats.
-External Destination: The serialized ciphertext leaves the SoC pins across the serial communication line to reach the external host or ground station.
+=============================================
+
+7. Data Path and Telemetry Pipeline Flow
+========================================
+
+7.1 Data-Path Overview
+======================
+[Ingress Path] External Host ──► Serial Line ──► UART ──► AXI4-Lite ──► VeeR EL2 Core ──► AXI4 ──► System SRAM [Data Movement & Processing] System SRAM ──► AXI4 ──► DMA Controller ──┬──► SHA-256 ──► Digest ──► AXI4-Lite / CPU Readback │ └──► AES-256 CBC ──► Ciphertext ──► System SRAM [Egress Path] System SRAM ──► VeeR EL2 (LSU) ──► AXI4-Lite ──► UART ──► Serial Line ──► External Host
+The data path consists of two cryptographic processing branches. The SHA-256 branch produces an integrity digest, while the AES-256 CBC branch produces the encrypted payload. The architecture does not assume that the SHA-256 output is directly connected to the AES-256 input unless such a dependency is explicitly defined by application firmware. The DMA controller executes the required transfers between System SRAM and the respective cryptographic accelerator interfaces. The SHA-256 and AES-256 paths are independent processing branches and can operate concurrently or sequentially as scheduled by system firmware.
+
+7.2 Data Ingress
+================
+Ingress Source: The data path begins at the external host, which supplies raw telemetry payloads, configuration frames, or command streams across the asynchronous serial communication line.Ingress Interface: The physical UART controller receives the serial data stream, converts serial frames into parallel bytes, and buffers incoming bytes into its internal 16-byte receive holding FIFO accessible via the UART's AXI4-Lite control interface.Transport Mechanism: The VeeR EL2 core retrieves received data from the UART controller through memory-mapped register accesses over the AXI4 interconnect via the UART's AXI4-Lite slave interface, or alternatively delegates fixed-source streaming to the DMA controller.Initial Storage Destination: The core issues write transactions through its AXI4 LSU master interface across the 64-bit crossbar to deposit incoming telemetry bytes directly into the System SRAM Ingress Frame Buffer (0x0000_0000 – 0x0000_3FFF), establishing the base payload for subsequent cryptographic processing.
+
+7.3 SRAM as the Shared Data Buffer
+==================================
+Buffer Role: The 64 KB System SRAM serves as the primary on-chip staging area and memory-mapped repository where raw telemetry payloads, intermediate processing blocks, and final encrypted outputs reside.Interface Access: Both the VeeR EL2 core via its LSU interface and the DMA controller access the SRAM as central memory slaves over the 64-bit AMBA AXI4 interconnect.Functional Purpose: It decouples the ingress and egress routines from high-speed cryptographic and transfer operations by providing stable, addressable memory ranges.Operational Boundary: The SRAM provides addressable storage for telemetry payloads, intermediate data, and encrypted results accessed through the AXI4 crossbar.
+
+7.4 DMA Data Movement
+=====================
+Transfer Source: The DMA controller reads payload data from configured base addresses residing within the System SRAM.Transport Mechanism: Operating as an independent AXI4 master on crossbar port s01, the DMA controller executes block data transfers without requiring byte-by-byte CPU intervention.Execution Processing: The DMA controller operates using transfer parameters programmed into its descriptor registers and manages data movement autonomously while signaling completion or error states via separate interrupt lines to the PIC.Transfer Destinations: Supported architectural transfers map explicitly to hardware endpoints:
+
+7.5 SHA-256 Data Path
+=====================
+Data Source: Buffered plaintext telemetry blocks residing in System SRAM.Transport Mechanism: The DMA controller streams these blocks across the AXI4 interconnect directly into the SHA-256 accelerator data FIFO endpoint.Processing Operation: The hardware accelerator computes the cryptographic message digest entirely through dedicated internal logic without modifying the underlying data blocks in SRAM.Result Destination: The resulting 256-bit hash digest is held in internal accelerator result registers (SHA_DIGEST0–7 at 0x4000_4020–3C), from which it is retrieved by the processor through the accelerator's control interface.
+
+7.6 AES-256 Data Path
+=====================
+Data Source: Plaintext telemetry payload blocks stored within System SRAM.Transport Mechanism: The DMA controller reads and streams the plaintext blocks over the AXI4 interconnect into the AES-256 CBC engine data interface.Processing Operation: Operating in Cipher Block Chaining mode, the engine combines incoming plaintext blocks with an Initialization Vector (IV) and a pre-loaded 256-bit key, chaining ciphertext dependencies across sequential transformation cycles.Result Destination: The resulting encrypted ciphertext blocks are written back across the AXI4 interconnect and stored in the designated Egress Buffer (0x0000_C000 – 0x0000_FFFF) within System SRAM.
+
+7.7 Data Egress
+===============
+Egress Source: Finalized, encrypted payload blocks residing within the System SRAM result buffers.Transport Mechanism: Under firmware direction, the VeeR EL2 core reads the secured payload from SRAM using its AXI4 LSU interface and directs it toward the UART transmit registers via the AXI4 interconnect through the UART's AXI4-Lite slave interface.Processing Operation: The UART controller accepts the bytes through AXI4-Lite register writes and serializes the data stream according to pre-configured baud rates and frame formats.External Destination: The serialized ciphertext leaves the SoC pins across the uart_tx pin to reach the external host or telemetry ground station.
+
+8. Verification Architecture & Testplan Summary
+===============================================
+
+8.1 Multi-Tier Verification Strategy
+====================================
+The SoC design is verified through a rigorous, multi-tiered verification framework combining:
+
+8.2 SoC Verification Test Matrix Summary
+========================================
+The verification testplan covers 38 structured test cases across 8 functional groups:
+
+Group Identifier | Test Count | Subsystem Verified | Key Checkpoints & Verification Objectives
+TC_BOOT_01..03 | 3 Tests | Boot, Memory & Reset | Reset vector execution from 0x8000_0000, ICCM/DCCM zero-wait-state memory execution, 64 KB System SRAM read/write byte-enable integrity.
+TC_UART_01..05 | 5 Tests | UART 16550 Serial Controller | Register access via crossbar, 115,200 baud serialization timing on  uart_tx , RX FIFO reception, parity/framing error detection, RX/TX interrupt generation.
+TC_TIMER_01..04 | 4 Tests | System Timer (rv_timer) | 64-bit real-time counter increment, prescaler tick divisor accuracy, compare match interrupt firing on  timer_irq_o , interrupt clearing via W1C.
+TC_GPIO_01..06 | 6 Tests | 64-Pin GPIO Subsystem | Output drive state across 64 pins, input sampling with 2-stage synchronizers, atomic SET/CLR/TOGGLE verification, rising/falling/level interrupt triggers.
+TC_SHA_01..04 | 4 Tests | SHA-256 Hash Accelerator | NIST CAVP golden test vectors, multi-block 512-bit message hashing, digest valid flag generation,  sha_irq_o  assertion.
+TC_AES_01..06 | 6 Tests | AES-256 CBC Accelerator | 256-bit key expansion schedule, 128-bit IV feedback chaining, multi-block encryption and decryption, ciphertext comparison against NIST SP 800-38A golden vectors,  aes_irq_o  assertion.
+TC_DMA_01..05 | 5 Tests | 64-bit AXI DMA Controller | CSR identification (signature 0xCAFE), linear SRAM-to-SRAM burst transfers, dual descriptor chaining, fixed-address FIFO streaming, bus fault address latching in  DMA_ERROR_ADDR .
+TC_SOC_01..05 | 5 Tests | Full SoC Telemetry Integration | End-to-end telemetry loopback: UART ingress → SRAM → DMA → SHA-256 digest & AES-256 CBC encryption → SRAM → UART egress transmission to host.
+
+
+9. Physical Implementation & Synthesis Guidelines
+=================================================
+
+9.1 Clock Domain Architecture
+=============================
+The SoC incorporates two primary asynchronous clock domains:
+
+9.2 Reset Strategy
+==================
+The SoC boundary receives an active-low asynchronous reset (aresetn). An internal reset synchronizer bridges this signal into the clk domain to provide clean synchronous de-assertion. An internal inverter derives active-high reset rst = ~aresetn to drive the axi_interconnect core, ensuring glitch-free power-on sequencing across all crossbar channels.

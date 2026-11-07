@@ -72,7 +72,7 @@ vcs -full64 -sverilog +v2k \
     rtl/sha/sha256_core.v \
     rtl/sha/sha256.v \
     rtl/sha/axi_sha256_top.v \
-    rtl/interconnect/soc_top.v \
+    rtl/soc_top.v \
     tb/tb_soc_top.sv \
     -o run/simv_soc
 
