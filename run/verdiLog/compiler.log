@@ -1,23 +1,19 @@
 *design* DebussyLib (btIdent Verdi_U-2023.03-SP1)
 Command arguments:
     +define+verilog
-    -f /home/student/Documents/RISC-V-Based-Cryptographic-Telemetry-Gateway-SoC/run/run.f
+    -f /home/student/Documents/RISC-V-Based-Cryptographic-Telemetry-Gateway-SoC/run/run_vip.f
         -sverilog
         +v2k
-        -debug_access+all
-*Warning* Unknown argument -debug_access+all
-
+        -timescale=1ns/1ps
         +define+FSDB
         +incdir+../rtl/dma/inc
         +incdir+../rtl/dma
         +incdir+../rtl/uart
         +incdir+../rtl/aes
+        +incdir+../tb/gpio_vip_uvm_tb
+        +incdir+../tb/uart_vip_uvm_tb
         +incdir+../c_test
         +incdir+../tb
-        -CFLAGS
-*Warning* Unknown argument -CFLAGS
-
-        +incdir+../c_test
         ../c_test/soc_test.c
         ../rtl/interconnect/priority_encoder.v
         ../rtl/interconnect/arbiter.v
@@ -52,6 +48,7 @@ Command arguments:
         ../rtl/aes/aes_inv_cipher_top.v
         ../rtl/aes/aes_regfile.v
         ../rtl/aes/aes_core_top.v
+        ../rtl/uart/timescale.v
         ../rtl/uart/uart_parity_bit_compute.v
         ../rtl/uart/axi_internal_fifo.v
         ../rtl/uart/uart_receiver.v
@@ -67,7 +64,11 @@ Command arguments:
         ../rtl/sha/sha256.v
         ../rtl/sha/axi_sha256_top.v
         ../rtl/interconnect/soc_top.v
-        ../tb/tb_soc_c_test.sv
+        ../tb/gpio_vip_uvm_tb/gpio_vip_if.sv
+        ../tb/gpio_vip_uvm_tb/gpio_vip_pkg.sv
+        ../tb/uart_vip_uvm_tb/uart_vip_if.sv
+        ../tb/uart_vip_uvm_tb/uart_vip_pkg.sv
+        ../tb/tb_top.sv
 
 
 *Error* Syntax error at #
@@ -648,8 +649,707 @@ Command arguments:
 
 *Error* Syntax error at }
 "../c_test/soc_test.c", 305: 
+
+*Error* `include file "uvm_macros.svh" cannot be read
+"../tb/gpio_vip_uvm_tb/gpio_vip_pkg.sv", 8: 
+
+*Error* failed to find the package 'uvm_pkg'.
+"../tb/gpio_vip_uvm_tb/gpio_vip_pkg.sv", 7: 
+
+*Warning* failed to find the class 'uvm_sequence_item'.
+"../tb/gpio_vip_uvm_tb/gpio_vip_item.sv", 8: 
+
+*Error* macro `uvm_object_utils_begin not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_item.sv", 20: 
+
+*Error* macro `uvm_field_int not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_item.sv", 21: 
+
+*Error* macro `uvm_field_int not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_item.sv", 22: 
+
+*Error* macro `uvm_field_int not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_item.sv", 23: 
+
+*Error* macro `uvm_field_int not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_item.sv", 24: 
+
+*Error* macro `uvm_field_int not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_item.sv", 25: 
+
+*Error* macro `uvm_field_int not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_item.sv", 26: 
+
+*Error* macro `uvm_object_utils_end not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_item.sv", 27: 
+
+*Warning* failed to find the class 'uvm_sequencer'.
+"../tb/gpio_vip_uvm_tb/gpio_vip_sequencer.sv", 6: 
+
+*Warning* 'uvm_sequencer' is not a parameter type.
+"../tb/gpio_vip_uvm_tb/gpio_vip_sequencer.sv", 6: 
+
+*Error* macro `uvm_component_utils not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_sequencer.sv", 8: 
+
+*Error* Syntax error at parent
+"../tb/gpio_vip_uvm_tb/gpio_vip_sequencer.sv", 10: 
+
+*Warning* failed to find the class 'uvm_driver'.
+"../tb/gpio_vip_uvm_tb/gpio_vip_driver.sv", 8: 
+
+*Warning* 'uvm_driver' is not a parameter type.
+"../tb/gpio_vip_uvm_tb/gpio_vip_driver.sv", 8: 
+
+*Error* macro `uvm_component_utils not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_driver.sv", 12: 
+
+*Error* Syntax error at parent
+"../tb/gpio_vip_uvm_tb/gpio_vip_driver.sv", 14: 
+
+*Error* Syntax error at phase
+"../tb/gpio_vip_uvm_tb/gpio_vip_driver.sv", 18: 
+
+*Error* macro `uvm_fatal not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_driver.sv", 24: 
+
+*Error* Syntax error at phase
+"../tb/gpio_vip_uvm_tb/gpio_vip_driver.sv", 28: 
+
+*Error* macro `uvm_info not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_driver.sv", 38: 
+
+*Error* Syntax error at )
+"../tb/gpio_vip_uvm_tb/gpio_vip_driver.sv", 40: 
+
+*Warning* failed to find the class 'uvm_monitor'.
+"../tb/gpio_vip_uvm_tb/gpio_vip_monitor.sv", 8: 
+
+*Error* Syntax error at #
+"../tb/gpio_vip_uvm_tb/gpio_vip_monitor.sv", 11: 
+
+*Error* macro `uvm_component_utils not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_monitor.sv", 13: 
+
+*Error* Syntax error at parent
+"../tb/gpio_vip_uvm_tb/gpio_vip_monitor.sv", 15: 
+
+*Error* Syntax error at phase
+"../tb/gpio_vip_uvm_tb/gpio_vip_monitor.sv", 19: 
+
+*Error* Syntax error at super
+"../tb/gpio_vip_uvm_tb/gpio_vip_monitor.sv", 20: 
+
+*Error* macro `uvm_fatal not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_monitor.sv", 26: 
+
+*Error* Syntax error at phase
+"../tb/gpio_vip_uvm_tb/gpio_vip_monitor.sv", 30: 
+
+*Error* macro `uvm_info not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_monitor.sv", 59: 
+
+*Error* Syntax error at )
+"../tb/gpio_vip_uvm_tb/gpio_vip_monitor.sv", 61: 
+
+*Warning* failed to find the class 'uvm_agent'.
+"../tb/gpio_vip_uvm_tb/gpio_vip_agent.sv", 6: 
+
+*Error* Syntax error at #
+"../tb/gpio_vip_uvm_tb/gpio_vip_agent.sv", 12: 
+
+*Error* macro `uvm_component_utils not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_agent.sv", 14: 
+
+*Error* Syntax error at parent
+"../tb/gpio_vip_uvm_tb/gpio_vip_agent.sv", 16: 
+
+*Error* Syntax error at phase
+"../tb/gpio_vip_uvm_tb/gpio_vip_agent.sv", 20: 
+
+*Error* Syntax error at super
+"../tb/gpio_vip_uvm_tb/gpio_vip_agent.sv", 21: 
+
+*Error* Syntax error at phase
+"../tb/gpio_vip_uvm_tb/gpio_vip_agent.sv", 31: 
+
+*Error* Syntax error at super
+"../tb/gpio_vip_uvm_tb/gpio_vip_agent.sv", 32: 
+
+*Warning* failed to find the class 'uvm_scoreboard'.
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 8: 
+
+*Error* Syntax error at #
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 10: 
+
+*Error* macro `uvm_component_utils not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 18: 
+
+*Error* Syntax error at parent
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 20: 
+
+*Error* Syntax error at phase
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 24: 
+
+*Error* Syntax error at super
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 25: 
+
+*Error* macro `uvm_info not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 36: 
+
+*Error* Syntax error at )
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 37: 
+
+*Error* macro `uvm_error not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 40: 
+
+*Error* macro `uvm_info not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 46: 
+
+*Error* Syntax error at )
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 48: 
+
+*Error* macro `uvm_info not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 55: 
+
+*Error* Syntax error at )
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 55: 
+
+*Error* Syntax error at phase
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 58: 
+
+*Error* macro `uvm_info not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 59: 
+
+*Error* macro `uvm_info not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 60: 
+
+*Error* macro `uvm_info not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 61: 
+
+*Error* macro `uvm_info not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 62: 
+
+*Error* Syntax error at )
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 62: 
+
+*Error* macro `uvm_info not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 63: 
+
+*Error* Syntax error at )
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 63: 
+
+*Error* macro `uvm_info not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 64: 
+
+*Error* Syntax error at )
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 64: 
+
+*Error* macro `uvm_info not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 65: 
+
+*Error* macro `uvm_info not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 67: 
+
+*Error* macro `uvm_error not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 69: 
+
+*Error* macro `uvm_info not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_scoreboard.sv", 71: 
+
+*Warning* failed to find the class 'uvm_env'.
+"../tb/gpio_vip_uvm_tb/gpio_vip_env.sv", 6: 
+
+*Error* macro `uvm_component_utils not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_env.sv", 11: 
+
+*Error* Syntax error at parent
+"../tb/gpio_vip_uvm_tb/gpio_vip_env.sv", 13: 
+
+*Error* Syntax error at phase
+"../tb/gpio_vip_uvm_tb/gpio_vip_env.sv", 17: 
+
+*Error* Syntax error at super
+"../tb/gpio_vip_uvm_tb/gpio_vip_env.sv", 18: 
+
+*Error* Syntax error at phase
+"../tb/gpio_vip_uvm_tb/gpio_vip_env.sv", 23: 
+
+*Error* Syntax error at super
+"../tb/gpio_vip_uvm_tb/gpio_vip_env.sv", 24: 
+
+*Warning* failed to find the class 'uvm_sequence'.
+"../tb/gpio_vip_uvm_tb/gpio_vip_test.sv", 10: 
+
+*Warning* 'uvm_sequence' is not a parameter type.
+"../tb/gpio_vip_uvm_tb/gpio_vip_test.sv", 10: 
+
+*Error* macro `uvm_object_utils not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_test.sv", 11: 
+
+*Error* macro `uvm_object_utils not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_test.sv", 32: 
+
+*Error* macro `uvm_info not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_test.sv", 39: 
+
+*Error* macro `uvm_info not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_test.sv", 58: 
+
+*Warning* failed to find the class 'uvm_test'.
+"../tb/gpio_vip_uvm_tb/gpio_vip_test.sv", 66: 
+
+*Error* macro `uvm_component_utils not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_test.sv", 69: 
+
+*Error* Syntax error at parent
+"../tb/gpio_vip_uvm_tb/gpio_vip_test.sv", 71: 
+
+*Error* Syntax error at phase
+"../tb/gpio_vip_uvm_tb/gpio_vip_test.sv", 75: 
+
+*Error* Syntax error at super
+"../tb/gpio_vip_uvm_tb/gpio_vip_test.sv", 76: 
+
+*Error* Syntax error at phase
+"../tb/gpio_vip_uvm_tb/gpio_vip_test.sv", 80: 
+
+*Error* macro `uvm_info not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_test.sv", 84: 
+
+*Error* macro `uvm_info not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_test.sv", 85: 
+
+*Error* macro `uvm_info not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_test.sv", 86: 
+
+*Error* macro `uvm_info not defined
+"../tb/gpio_vip_uvm_tb/gpio_vip_test.sv", 92: 
+
+*Error* `include file "uvm_macros.svh" cannot be read
+"../tb/uart_vip_uvm_tb/uart_vip_pkg.sv", 8: 
+
+*Error* failed to find the package 'uvm_pkg'.
+"../tb/uart_vip_uvm_tb/uart_vip_pkg.sv", 7: 
+
+*Warning* failed to find the class 'uvm_sequence_item'.
+"../tb/uart_vip_uvm_tb/uart_vip_item.sv", 7: 
+
+*Error* macro `uvm_object_utils_begin not defined
+"../tb/uart_vip_uvm_tb/uart_vip_item.sv", 31: 
+
+*Error* macro `uvm_field_int not defined
+"../tb/uart_vip_uvm_tb/uart_vip_item.sv", 32: 
+
+*Error* macro `uvm_field_int not defined
+"../tb/uart_vip_uvm_tb/uart_vip_item.sv", 33: 
+
+*Error* macro `uvm_field_int not defined
+"../tb/uart_vip_uvm_tb/uart_vip_item.sv", 34: 
+
+*Error* macro `uvm_field_int not defined
+"../tb/uart_vip_uvm_tb/uart_vip_item.sv", 35: 
+
+*Error* macro `uvm_field_int not defined
+"../tb/uart_vip_uvm_tb/uart_vip_item.sv", 36: 
+
+*Error* macro `uvm_field_int not defined
+"../tb/uart_vip_uvm_tb/uart_vip_item.sv", 37: 
+
+*Error* macro `uvm_field_int not defined
+"../tb/uart_vip_uvm_tb/uart_vip_item.sv", 38: 
+
+*Error* macro `uvm_field_enum not defined
+"../tb/uart_vip_uvm_tb/uart_vip_item.sv", 39: 
+
+*Error* macro `uvm_field_int not defined
+"../tb/uart_vip_uvm_tb/uart_vip_item.sv", 40: 
+
+*Error* macro `uvm_object_utils_end not defined
+"../tb/uart_vip_uvm_tb/uart_vip_item.sv", 41: 
+
+*Warning* failed to find the class 'uvm_sequencer'.
+"../tb/uart_vip_uvm_tb/uart_vip_sequencer.sv", 6: 
+
+*Warning* 'uvm_sequencer' is not a parameter type.
+"../tb/uart_vip_uvm_tb/uart_vip_sequencer.sv", 6: 
+
+*Error* macro `uvm_component_utils not defined
+"../tb/uart_vip_uvm_tb/uart_vip_sequencer.sv", 8: 
+
+*Error* Syntax error at parent
+"../tb/uart_vip_uvm_tb/uart_vip_sequencer.sv", 10: 
+
+*Warning* failed to find the class 'uvm_driver'.
+"../tb/uart_vip_uvm_tb/uart_vip_driver.sv", 8: 
+
+*Warning* 'uvm_driver' is not a parameter type.
+"../tb/uart_vip_uvm_tb/uart_vip_driver.sv", 8: 
+
+*Error* macro `uvm_component_utils not defined
+"../tb/uart_vip_uvm_tb/uart_vip_driver.sv", 12: 
+
+*Error* Syntax error at parent
+"../tb/uart_vip_uvm_tb/uart_vip_driver.sv", 14: 
+
+*Error* Syntax error at phase
+"../tb/uart_vip_uvm_tb/uart_vip_driver.sv", 18: 
+
+*Error* macro `uvm_fatal not defined
+"../tb/uart_vip_uvm_tb/uart_vip_driver.sv", 24: 
+
+*Error* Syntax error at phase
+"../tb/uart_vip_uvm_tb/uart_vip_driver.sv", 28: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_driver.sv", 50: 
+
+*Error* Syntax error at "."
+"../tb/uart_vip_uvm_tb/uart_vip_driver.sv", 52: 
+
+*Error* Syntax error at ,
+"../tb/uart_vip_uvm_tb/uart_vip_driver.sv", 53: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_driver.sv", 88: 
+
+*Error* Syntax error at )
+"../tb/uart_vip_uvm_tb/uart_vip_driver.sv", 88: 
+
+*Warning* failed to find the class 'uvm_monitor'.
+"../tb/uart_vip_uvm_tb/uart_vip_monitor.sv", 8: 
+
+*Error* Syntax error at #
+"../tb/uart_vip_uvm_tb/uart_vip_monitor.sv", 11: 
+
+*Error* macro `uvm_component_utils not defined
+"../tb/uart_vip_uvm_tb/uart_vip_monitor.sv", 15: 
+
+*Error* Syntax error at parent
+"../tb/uart_vip_uvm_tb/uart_vip_monitor.sv", 17: 
+
+*Error* Syntax error at phase
+"../tb/uart_vip_uvm_tb/uart_vip_monitor.sv", 21: 
+
+*Error* Syntax error at super
+"../tb/uart_vip_uvm_tb/uart_vip_monitor.sv", 22: 
+
+*Error* macro `uvm_fatal not defined
+"../tb/uart_vip_uvm_tb/uart_vip_monitor.sv", 28: 
+
+*Error* Syntax error at phase
+"../tb/uart_vip_uvm_tb/uart_vip_monitor.sv", 32: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_monitor.sv", 71: 
+
+*Error* Syntax error at "."
+"../tb/uart_vip_uvm_tb/uart_vip_monitor.sv", 73: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_monitor.sv", 87: 
+
+*Error* Syntax error at )
+"../tb/uart_vip_uvm_tb/uart_vip_monitor.sv", 88: 
+
+*Warning* failed to find the class 'uvm_agent'.
+"../tb/uart_vip_uvm_tb/uart_vip_agent.sv", 6: 
+
+*Error* Syntax error at #
+"../tb/uart_vip_uvm_tb/uart_vip_agent.sv", 12: 
+
+*Error* macro `uvm_component_utils not defined
+"../tb/uart_vip_uvm_tb/uart_vip_agent.sv", 14: 
+
+*Error* Syntax error at parent
+"../tb/uart_vip_uvm_tb/uart_vip_agent.sv", 16: 
+
+*Error* Syntax error at phase
+"../tb/uart_vip_uvm_tb/uart_vip_agent.sv", 20: 
+
+*Error* Syntax error at super
+"../tb/uart_vip_uvm_tb/uart_vip_agent.sv", 21: 
+
+*Error* Syntax error at phase
+"../tb/uart_vip_uvm_tb/uart_vip_agent.sv", 31: 
+
+*Error* Syntax error at super
+"../tb/uart_vip_uvm_tb/uart_vip_agent.sv", 32: 
+
+*Warning* failed to find the class 'uvm_scoreboard'.
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 8: 
+
+*Error* Syntax error at #
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 10: 
+
+*Error* macro `uvm_component_utils not defined
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 17: 
+
+*Error* Syntax error at parent
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 19: 
+
+*Error* Syntax error at phase
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 23: 
+
+*Error* Syntax error at super
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 24: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 35: 
+
+*Error* Syntax error at "."
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 37: 
+
+*Error* macro `uvm_error not defined
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 40: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 46: 
+
+*Error* Syntax error at "."
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 48: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 55: 
+
+*Error* Syntax error at )
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 55: 
+
+*Error* Syntax error at phase
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 58: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 59: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 60: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 61: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 62: 
+
+*Error* Syntax error at )
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 62: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 63: 
+
+*Error* Syntax error at )
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 63: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 64: 
+
+*Error* Syntax error at )
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 64: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 65: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 67: 
+
+*Error* macro `uvm_error not defined
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 69: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_scoreboard.sv", 71: 
+
+*Warning* failed to find the class 'uvm_env'.
+"../tb/uart_vip_uvm_tb/uart_vip_env.sv", 6: 
+
+*Error* macro `uvm_component_utils not defined
+"../tb/uart_vip_uvm_tb/uart_vip_env.sv", 11: 
+
+*Error* Syntax error at parent
+"../tb/uart_vip_uvm_tb/uart_vip_env.sv", 13: 
+
+*Error* Syntax error at phase
+"../tb/uart_vip_uvm_tb/uart_vip_env.sv", 17: 
+
+*Error* Syntax error at super
+"../tb/uart_vip_uvm_tb/uart_vip_env.sv", 18: 
+
+*Error* Syntax error at phase
+"../tb/uart_vip_uvm_tb/uart_vip_env.sv", 23: 
+
+*Error* Syntax error at super
+"../tb/uart_vip_uvm_tb/uart_vip_env.sv", 24: 
+
+*Warning* failed to find the class 'uvm_sequence'.
+"../tb/uart_vip_uvm_tb/uart_vip_test.sv", 10: 
+
+*Warning* 'uvm_sequence' is not a parameter type.
+"../tb/uart_vip_uvm_tb/uart_vip_test.sv", 10: 
+
+*Error* macro `uvm_object_utils not defined
+"../tb/uart_vip_uvm_tb/uart_vip_test.sv", 11: 
+
+*Error* macro `uvm_object_utils not defined
+"../tb/uart_vip_uvm_tb/uart_vip_test.sv", 33: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_test.sv", 40: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_test.sv", 50: 
+
+*Warning* failed to find the class 'uvm_test'.
+"../tb/uart_vip_uvm_tb/uart_vip_test.sv", 58: 
+
+*Error* macro `uvm_component_utils not defined
+"../tb/uart_vip_uvm_tb/uart_vip_test.sv", 61: 
+
+*Error* Syntax error at parent
+"../tb/uart_vip_uvm_tb/uart_vip_test.sv", 63: 
+
+*Error* Syntax error at phase
+"../tb/uart_vip_uvm_tb/uart_vip_test.sv", 67: 
+
+*Error* Syntax error at super
+"../tb/uart_vip_uvm_tb/uart_vip_test.sv", 68: 
+
+*Error* Syntax error at phase
+"../tb/uart_vip_uvm_tb/uart_vip_test.sv", 72: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_test.sv", 76: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_test.sv", 77: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_test.sv", 78: 
+
+*Error* macro `uvm_info not defined
+"../tb/uart_vip_uvm_tb/uart_vip_test.sv", 84: 
+
+*Error* `include file "uvm_macros.svh" cannot be read
+"../tb/tb_top.sv", 16: 
+
+*Error* failed to find the package 'uvm_pkg'.
+"../tb/tb_top.sv", 15: 
+
+*Warning* failed to find the class 'uvm_test'.
+"../tb/tb_top.sv", 435: 
+
+*Error* macro `uvm_component_utils not defined
+"../tb/tb_top.sv", 436: 
+
+*Error* Syntax error at parent
+"../tb/tb_top.sv", 441: 
+
+*Error* Syntax error at phase
+"../tb/tb_top.sv", 445: 
+
+*Error* Syntax error at super
+"../tb/tb_top.sv", 446: 
+
+*Error* Syntax error at phase
+"../tb/tb_top.sv", 451: 
+
+*Error* macro `uvm_info not defined
+"../tb/tb_top.sv", 456: 
+
+*Error* macro `uvm_info not defined
+"../tb/tb_top.sv", 457: 
+
+*Error* macro `uvm_info not defined
+"../tb/tb_top.sv", 458: 
+
+*Error* macro `uvm_info not defined
+"../tb/tb_top.sv", 459: 
+
+*Error* macro `uvm_info not defined
+"../tb/tb_top.sv", 464: 
+
+*Error* macro `uvm_error not defined
+"../tb/tb_top.sv", 466: 
+
+*Warning* failed to find the class 'uvm_test'.
+"../tb/tb_top.sv", 476: 
+
+*Error* macro `uvm_component_utils not defined
+"../tb/tb_top.sv", 477: 
+
+*Error* Syntax error at parent
+"../tb/tb_top.sv", 482: 
+
+*Error* Syntax error at phase
+"../tb/tb_top.sv", 486: 
+
+*Error* Syntax error at super
+"../tb/tb_top.sv", 487: 
+
+*Error* Syntax error at phase
+"../tb/tb_top.sv", 492: 
+
+*Error* macro `uvm_info not defined
+"../tb/tb_top.sv", 500: 
+
+*Error* macro `uvm_info not defined
+"../tb/tb_top.sv", 501: 
+
+*Error* macro `uvm_info not defined
+"../tb/tb_top.sv", 502: 
+
+*Error* macro `uvm_info not defined
+"../tb/tb_top.sv", 508: 
+
+*Error* macro `uvm_info not defined
+"../tb/tb_top.sv", 510: 
+
+*Error* macro `uvm_info not defined
+"../tb/tb_top.sv", 521: 
+
+*Error* macro `uvm_info not defined
+"../tb/tb_top.sv", 523: 
+
+*Error* macro `uvm_info not defined
+"../tb/tb_top.sv", 526: 
+
+*Error* macro `uvm_info not defined
+"../tb/tb_top.sv", 527: 
+
+*Error* macro `uvm_info not defined
+"../tb/tb_top.sv", 528: 
 Highest level modules:
 aes_key_expand_128
-tb_soc_c_test
+tb_top
 
-Total	186 error(s),   9 warning(s)
+
+*Warning* 'uvm_sequencer' is not a parameter type.
+"../tb/gpio_vip_uvm_tb/gpio_vip_sequencer.sv", 6: 
+
+*Warning* 'uvm_driver' is not a parameter type.
+"../tb/gpio_vip_uvm_tb/gpio_vip_driver.sv", 8: 
+
+*Warning* 'uvm_sequence' is not a parameter type.
+"../tb/gpio_vip_uvm_tb/gpio_vip_test.sv", 10: 
+
+*Warning* 'uvm_sequencer' is not a parameter type.
+"../tb/uart_vip_uvm_tb/uart_vip_sequencer.sv", 6: 
+
+*Warning* 'uvm_driver' is not a parameter type.
+"../tb/uart_vip_uvm_tb/uart_vip_driver.sv", 8: 
+
+*Warning* 'uvm_sequence' is not a parameter type.
+"../tb/uart_vip_uvm_tb/uart_vip_test.sv", 10: 
+
+*Error* failed to find identifier uvm_config_db(gpio_vip_if)::set
+"../tb/tb_top.sv", 540: 
+
+*Error* failed to find identifier uvm_config_db(gpio_vip_if)::set
+"../tb/tb_top.sv", 541: 
+
+*Error* failed to find identifier uvm_config_db(uart_vip_if)::set
+"../tb/tb_top.sv", 542: 
+
+*Error* failed to find identifier uvm_config_db(uart_vip_if)::set
+"../tb/tb_top.sv", 543: 
+
+*Error* failed to find identifier run_test
+"../tb/tb_top.sv", 566: 
+Total	387 error(s),   39 warning(s)

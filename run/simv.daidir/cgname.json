@@ -5,11 +5,47 @@
         "module",
         1
     ],
+    "vcs_paramclassrepository": [
+        "vcs_paramclassrepository",
+        "hEeZs",
+        "module",
+        38
+    ],
+    "_vcs_unit__4172169539": [
+        "_vcs_unit__4172169539",
+        "gN7pT",
+        "module",
+        39
+    ],
     "std": [
         "std",
         "reYIK",
         "module",
         2
+    ],
+    "uvm_pkg": [
+        "uvm_pkg",
+        "zr7M1",
+        "module",
+        40
+    ],
+    "_vcs_msglog": [
+        "_vcs_msglog",
+        "zQBzV",
+        "module",
+        41
+    ],
+    "uvm_custom_install_recording": [
+        "uvm_custom_install_recording",
+        "nhiwz",
+        "module",
+        42
+    ],
+    "uvm_custom_install_verdi_recording": [
+        "uvm_custom_install_verdi_recording",
+        "EbjT3",
+        "module",
+        43
     ],
     "priority_encoder_0000": [
         "priority_encoder_0000",
@@ -209,11 +245,35 @@
         "module",
         35
     ],
-    "tb_soc_c_test": [
-        "tb_soc_c_test",
-        "NMn1Q",
+    "gpio_vip_if": [
+        "gpio_vip_if",
+        "rmq5S",
         "module",
-        36
+        44
+    ],
+    "gpio_vip_pkg": [
+        "gpio_vip_pkg",
+        "V6TgS",
+        "module",
+        45
+    ],
+    "uart_vip_if": [
+        "uart_vip_if",
+        "CdhFP",
+        "module",
+        46
+    ],
+    "uart_vip_pkg": [
+        "uart_vip_pkg",
+        "nQnjc",
+        "module",
+        47
+    ],
+    "tb_top": [
+        "tb_top",
+        "jdPWL",
+        "module",
+        48
     ],
     "...MASTER...": [
         "SIM",

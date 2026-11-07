@@ -3,6 +3,14 @@
 AR=ar
 DOTLIBS=/home/student/snps_tools_target/vcs/U-2023.03/linux64/lib/libvirsim.so /home/student/snps_tools_target/vcs/U-2023.03/linux64/lib/liberrorinf.so /home/student/snps_tools_target/vcs/U-2023.03/linux64/lib/libsnpsmalloc.so /home/student/snps_tools_target/vcs/U-2023.03/linux64/lib/libvfs.so 
 
+uvm_dpi.o : uvm_dpi.d /home/student/snps_tools_target/vcs/U-2023.03/etc/uvm/dpi/uvm_dpi.cc
+	g++ $(CFLAGS) -c /home/student/snps_tools_target/vcs/U-2023.03/etc/uvm/dpi/uvm_dpi.cc
+uvm_dpi.d : /home/student/snps_tools_target/vcs/U-2023.03/etc/uvm/dpi/uvm_dpi.cc
+	@g++ -MM $(CFLAGS) -c /home/student/snps_tools_target/vcs/U-2023.03/etc/uvm/dpi/uvm_dpi.cc > uvm_dpi.d
+uvm_verdi_dpi.o : uvm_verdi_dpi.d /home/student/snps_tools_target/vcs/U-2023.03/etc/uvm/verdi/dpi/uvm_verdi_dpi.cpp
+	g++ $(CFLAGS) -c /home/student/snps_tools_target/vcs/U-2023.03/etc/uvm/verdi/dpi/uvm_verdi_dpi.cpp
+uvm_verdi_dpi.d : /home/student/snps_tools_target/vcs/U-2023.03/etc/uvm/verdi/dpi/uvm_verdi_dpi.cpp
+	@g++ -MM $(CFLAGS) -c /home/student/snps_tools_target/vcs/U-2023.03/etc/uvm/verdi/dpi/uvm_verdi_dpi.cpp > uvm_verdi_dpi.d
 soc_test.o : soc_test.d $(VSRC)/../c_test/soc_test.c
 	gcc $(CFLAGS) -c $(VSRC)/../c_test/soc_test.c
 soc_test.d : $(VSRC)/../c_test/soc_test.c
@@ -11,8 +19,8 @@ soc_test.d : $(VSRC)/../c_test/soc_test.c
 # will be overwritten the next time VCS is run
 DPI_ALLOW_MAIN_SO=
 VCS_LIBEXT=
-XTRN_OBJS=/usr/lib64/libnuma.so.1 soc_test.o 
-DPI_OBJS=soc_test.o 
+XTRN_OBJS=/usr/lib64/libnuma.so.1 uvm_dpi.o uvm_verdi_dpi.o soc_test.o 
+DPI_OBJS=uvm_dpi.o uvm_verdi_dpi.o soc_test.o 
 
 DPI_WRAPPER_OBJS = 
 DPI_STUB_OBJS = 

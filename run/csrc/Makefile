@@ -65,15 +65,15 @@ TMPSPECENV=$(VCSTMPSPECENV)
 CC=$(TMPSPECENV) $(VCS_CC) $(TMPSPECARG)
 
 # C flags for compilation
-CFLAGS=$(STDLIB)-w  -pipe -fPIC -O -I/home/student/snps_tools_target/vcs/U-2023.03/include   
+CFLAGS=$(STDLIB)-w  -pipe -DVCS -DUVM_DPI_DO_TYPE_CHECK -fPIC -O -I/home/student/snps_tools_target/vcs/U-2023.03/include   
 
-CFLAGS_O0=-w  -pipe -fPIC -I/home/student/snps_tools_target/vcs/U-2023.03/include -O0  -fno-strict-aliasing -fno-optimize-sibling-calls   
+CFLAGS_O0=-w  -pipe -DVCS -DUVM_DPI_DO_TYPE_CHECK -fPIC -I/home/student/snps_tools_target/vcs/U-2023.03/include -O0  -fno-strict-aliasing -fno-optimize-sibling-calls   
 
-CFLAGS_CG=-w  -pipe -fPIC -I/home/student/snps_tools_target/vcs/U-2023.03/include -O  -fno-strict-aliasing -fno-optimize-sibling-calls   
+CFLAGS_CG=-w  -pipe -DVCS -DUVM_DPI_DO_TYPE_CHECK -fPIC -I/home/student/snps_tools_target/vcs/U-2023.03/include -O  -fno-strict-aliasing -fno-optimize-sibling-calls   
 
-CFLAGS_CG_CLIB=-w  -pipe -fPIC -I/home/student/snps_tools_target/vcs/U-2023.03/include -O  -fno-strict-aliasing -fno-optimize-sibling-calls   
+CFLAGS_CG_CLIB=-w  -pipe -DVCS -DUVM_DPI_DO_TYPE_CHECK -fPIC -I/home/student/snps_tools_target/vcs/U-2023.03/include -O  -fno-strict-aliasing -fno-optimize-sibling-calls   
 
-CFLAGS_RMAR=-w  -pipe -fPIC -I/home/student/snps_tools_target/vcs/U-2023.03/include -O  -fno-strict-aliasing -fno-optimize-sibling-calls   
+CFLAGS_RMAR=-w  -pipe -DVCS -DUVM_DPI_DO_TYPE_CHECK -fPIC -I/home/student/snps_tools_target/vcs/U-2023.03/include -O  -fno-strict-aliasing -fno-optimize-sibling-calls   
 
 CFLAGS_CG+=$(STDLIB)
 CFLAGS_CG_CLIB+=$(STDLIB)
@@ -104,7 +104,6 @@ clobber : clean
 picclean : 
 	rm -f _cuarc*.so _csrc*.so pre_vcsobj_*.so share_vcsobj_*.so
 	@rm -f $(PRODUCT).daidir/_[0-9]*_archive_*.so 2>/dev/null
-	@rm -f $(DPI_OBJS)
 
 product_clean_order : 
 	@$(MAKE) -f Makefile --no-print-directory picclean

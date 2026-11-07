@@ -92,9 +92,9 @@ VCS compile option:
  option[2]: -Mcc=gcc
  option[3]: -Mcplusplus=g++
  option[4]: -Masflags=
- option[5]: -Mcfl= -pipe -fPIC -O -I/home/student/snps_tools_target/vcs/U-2023.03/include 
+ option[5]: -Mcfl= -pipe -DVCS -DUVM_DPI_DO_TYPE_CHECK -fPIC -O -I/home/student/snps_tools_target/vcs/U-2023.03/include 
  option[6]: -Mxllcflags=
- option[7]: -Mxcflags= -pipe -fPIC -I/home/student/snps_tools_target/vcs/U-2023.03/include
+ option[7]: -Mxcflags= -pipe -DVCS -DUVM_DPI_DO_TYPE_CHECK -fPIC -I/home/student/snps_tools_target/vcs/U-2023.03/include
  option[8]: -Mldflags= -rdynamic 
  option[9]: -Mout=simv
  option[10]: -Mamsrun=
@@ -104,26 +104,39 @@ VCS compile option:
  option[14]: -Msaverestoreobj=/home/student/snps_tools_target/vcs/U-2023.03/linux64/lib/vcs_save_restore_new.o
  option[15]: -Mcrt0=
  option[16]: -Mcrtn=
- option[17]: -Mcsrc=
+ option[17]: -Mcsrc=/home/student/snps_tools_target/vcs/U-2023.03/etc/uvm/dpi/uvm_dpi.cc /home/student/snps_tools_target/vcs/U-2023.03/etc/uvm/verdi/dpi/uvm_verdi_dpi.cpp 
  option[18]: -Msyslibs=/home/student/snps_tools_target/verdi/U-2023.03-SP1/share/PLI/VCS/LINUX64/pli.a -ldl 
- option[19]: -full64
- option[20]: -kdb
- option[21]: -Xufe=2steps
- option[22]: -debug_access+all
- option[23]: +vpi
- option[24]: +vcsd1
- option[25]: +itf+/home/student/snps_tools_target/vcs/U-2023.03/linux64/lib/vcsdp_lite.tab
- option[26]: -o
- option[27]: simv
- option[28]: -picarchive
- option[29]: -P
- option[30]: /home/student/snps_tools_target/verdi/U-2023.03-SP1/share/PLI/VCS/LINUX64/verdi.tab
- option[31]: -fsdb
- option[32]: -gen_obj
- option[33]: -f
- option[34]: run.f
- option[35]: -load
- option[36]: /home/student/snps_tools_target/verdi/U-2023.03-SP1/share/PLI/VCS/LINUX64/libnovas.so:FSDBDumpCmd
+ option[19]: +define+UVM_VERDI_VIF_RECORD
+ option[20]: +define+UVM_VCS_RECORD
+ option[21]: +incdir+/home/student/snps_tools_target/vcs/U-2023.03/etc/uvm/vcs
+ option[22]: /home/student/snps_tools_target/vcs/U-2023.03/etc/uvm/uvm_pkg.sv
+ option[23]: /home/student/snps_tools_target/vcs/U-2023.03/etc/uvm/vcs/uvm_custom_install_vcs_recorder.sv
+ option[24]: +incdir+/home/student/snps_tools_target/vcs/U-2023.03/etc/uvm/verdi
+ option[25]: /home/student/snps_tools_target/vcs/U-2023.03/etc/uvm/verdi/uvm_custom_install_verdi_recorder.sv
+ option[26]: -full64
+ option[27]: -ntb_opts
+ option[28]: uvm
+ option[29]: +incdir+/home/student/snps_tools_target/vcs/U-2023.03/etc/uvm/
+ option[30]: -debug_access+all
+ option[31]: +vpi
+ option[32]: +vcsd1
+ option[33]: +itf+/home/student/snps_tools_target/vcs/U-2023.03/linux64/lib/vcsdp_lite.tab
+ option[34]: -kdb
+ option[35]: -Xufe=2steps
+ option[36]: -o
+ option[37]: simv
+ option[38]: -picarchive
+ option[39]: -P
+ option[40]: /home/student/snps_tools_target/verdi/U-2023.03-SP1/share/PLI/VCS/LINUX64/verdi.tab
+ option[41]: -fsdb
+ option[42]: -sverilog
+ option[43]: -gen_obj
+ option[44]: -f
+ option[45]: run_vip.f
+ option[46]: +define+UVM_DIRECTC_OPTS
+ option[47]: -load
+ option[48]: /home/student/snps_tools_target/verdi/U-2023.03-SP1/share/PLI/VCS/LINUX64/libnovas.so:FSDBDumpCmd
+ option[49]: timescale=1ns/1ps
 Chronologic Simulation VCS Release U-2023.03_Full64
 Linux 4.18.0-553.53.1.el8_10.x86_64 #1 SMP Fri May 23 15:07:49 UTC 2025 x86_64
 CPU cores: 12
@@ -132,7 +145,7 @@ Limit information:
 cputime		unlimited
 filesize		unlimited
 datasize		unlimited
-stacksize		unlimited
+stacksize		8307 kbytes
 coredumpsize		0 kbytes
 memoryuse		unlimited
 vmemoryuse		unlimited
@@ -143,88 +156,68 @@ maxproc		127016
 (Special)Runtime environment variables:
 
 Runtime environment variables:
-ANTIGRAVITY_CONVERSATION_ID=bf3c163f-e451-41e2-a722-2a69689c2af9
-LD_LIBRARY_PATH=/opt/berkeleydb/lib:/opt/berkeleydb/lib:
 LS_COLORS=rs=0:di=38;5;33:ln=38;5;51:mh=00:pi=40;38;5;11:so=38;5;13:do=38;5;5:bd=48;5;232;38;5;11:cd=48;5;232;38;5;3:or=48;5;232;38;5;9:mi=01;05;37;41:su=48;5;196;38;5;15:sg=48;5;11;38;5;16:ca=48;5;196;38;5;226:tw=48;5;10;38;5;16:ow=48;5;10;38;5;21:st=48;5;21;38;5;15:ex=38;5;40:*.tar=38;5;9:*.tgz=38;5;9:*.arc=38;5;9:*.arj=38;5;9:*.taz=38;5;9:*.lha=38;5;9:*.lz4=38;5;9:*.lzh=38;5;9:*.lzma=38;5;9:*.tlz=38;5;9:*.txz=38;5;9:*.tzo=38;5;9:*.t7z=38;5;9:*.zip=38;5;9:*.z=38;5;9:*.dz=38;5;9:*.gz=38;5;9:*.lrz=38;5;9:*.lz=38;5;9:*.lzo=38;5;9:*.xz=38;5;9:*.zst=38;5;9:*.tzst=38;5;9:*.bz2=38;5;9:*.bz=38;5;9:*.tbz=38;5;9:*.tbz2=38;5;9:*.tz=38;5;9:*.deb=38;5;9:*.rpm=38;5;9:*.jar=38;5;9:*.war=38;5;9:*.ear=38;5;9:*.sar=38;5;9:*.rar=38;5;9:*.alz=38;5;9:*.ace=38;5;9:*.zoo=38;5;9:*.cpio=38;5;9:*.7z=38;5;9:*.rz=38;5;9:*.cab=38;5;9:*.wim=38;5;9:*.swm=38;5;9:*.dwm=38;5;9:*.esd=38;5;9:*.jpg=38;5;13:*.jpeg=38;5;13:*.mjpg=38;5;13:*.mjpeg=38;5;13:*.gif=38;5;13:*.bmp=38;5;13:*.pbm=38;5;13:*.pgm=38;5;13:*.ppm=38;5;13:*.tga=38;5;13:*.xbm=38;5;13:*.xpm=38;5;13:*.tif=38;5;13:*.tiff=38;5;13:*.png=38;5;13:*.svg=38;5;13:*.svgz=38;5;13:*.mng=38;5;13:*.pcx=38;5;13:*.mov=38;5;13:*.mpg=38;5;13:*.mpeg=38;5;13:*.m2v=38;5;13:*.mkv=38;5;13:*.webm=38;5;13:*.ogm=38;5;13:*.mp4=38;5;13:*.m4v=38;5;13:*.mp4v=38;5;13:*.vob=38;5;13:*.qt=38;5;13:*.nuv=38;5;13:*.wmv=38;5;13:*.asf=38;5;13:*.rm=38;5;13:*.rmvb=38;5;13:*.flc=38;5;13:*.avi=38;5;13:*.fli=38;5;13:*.flv=38;5;13:*.gl=38;5;13:*.dl=38;5;13:*.xcf=38;5;13:*.xwd=38;5;13:*.yuv=38;5;13:*.cgm=38;5;13:*.emf=38;5;13:*.ogv=38;5;13:*.ogx=38;5;13:*.aac=38;5;45:*.au=38;5;45:*.flac=38;5;45:*.m4a=38;5;45:*.mid=38;5;45:*.midi=38;5;45:*.mka=38;5;45:*.mp3=38;5;45:*.mpc=38;5;45:*.ogg=38;5;45:*.ra=38;5;45:*.wav=38;5;45:*.oga=38;5;45:*.opus=38;5;45:*.spx=38;5;45:*.xspf=38;5;45:
-ANTIGRAVITY_TRAJECTORY_ID=d7642b67-9ff6-4599-84fb-201feddd011f
-ANTIGRAVITY_LS_ADDRESS=localhost:36911
+LD_LIBRARY_PATH=/opt/berkeleydb/lib:/opt/berkeleydb/lib:
 XDG_MENU_PREFIX=gnome-
-ANTIGRAVITY_APP_DATA_DIR=/home/student/.gemini/antigravity-cli
 MODULES_RUN_QUARANTINE=LD_LIBRARY_PATH LD_PRELOAD
 LANG=en_IN.UTF-8
 GDM_LANG=en_IN.UTF-8
 HISTCONTROL=ignoredups
-ANTIGRAVITY_AGENTAPI_EXE=/home/student/.local/bin/agy
-MANAGERPID=4468
+MANAGERPID=3877
 DISPLAY=:0
 GUESTFISH_RESTORE=\e[0m
 HOSTNAME=vlsi64.vce.ac.in
-OLDPWD=/home/student/Documents/RISC-V-Based-Cryptographic-Telemetry-Gateway-SoC
-INVOCATION_ID=88b25680d5644835bb6754e95190567a
+INVOCATION_ID=80e4a8fd878743f2b5c64ccdad56932c
 COLORTERM=truecolor
 GUESTFISH_INIT=\e[1;34m
-JJ_EDITOR=false
-SNPSLMD_LICENSE_FILE=27021@14.139.1.126
 USERNAME=student
 XDG_VTNR=2
-GIT_EDITOR=false
 SSH_AUTH_SOCK=/run/user/1000/keyring/ssh
 S_COLORS=auto
 which_declare=declare -f
 XDG_SESSION_ID=2
 MODULES_CMD=/usr/share/Modules/libexec/modulecmd.tcl
 USER=student
-PAGER=cat
 GUESTFISH_PS1=\[\e[1;32m\]><fs>\[\e[0;31m\] 
 DESKTOP_SESSION=gnome
 WAYLAND_DISPLAY=wayland-0
-GNOME_TERMINAL_SCREEN=/org/gnome/Terminal/screen/e196533d_7f86_4348_a9a2_70d0c59d2412
+GNOME_TERMINAL_SCREEN=/org/gnome/Terminal/screen/d5dcfffb_0bd9_4398_b1d7_993b19da396d
 PWD=/home/student/Documents/RISC-V-Based-Cryptographic-Telemetry-Gateway-SoC/run
 SSH_ASKPASS=/usr/libexec/openssh/gnome-ssh-askpass
 HOME=/home/student
-JOURNAL_STREAM=9:53633
+JOURNAL_STREAM=9:52387
 XDG_SESSION_TYPE=wayland
 XDG_DATA_DIRS=/home/student/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share/:/usr/share/
 XDG_SESSION_DESKTOP=gnome
-ANTIGRAVITY_PROJECT_ID=default-cli-project
-ANTIGRAVITY_AGENT=1
-DBUS_STARTER_ADDRESS=unix:path=/run/user/1000/bus,guid=12a003c6adf060689e12f83e6ae59ee7
+DBUS_STARTER_ADDRESS=unix:path=/run/user/1000/bus,guid=1cb87df4df2ebf77220f5f656aeea722
 LOADEDMODULES=
 MAIL=/var/spool/mail/student
-ANTIGRAVITY_SOURCE_METADATA={"tool":{"conversationId":"bf3c163f-e451-41e2-a722-2a69689c2af9", "stepIndex":82, "toolCall":{"id":"call_210270", "name":"run_command", "argumentsJson":"{\"CommandLine\":\"export VCS_HOME=\\\"/home/student/snps_tools_target/vcs/U-2023.03\\\"\\nexport VERDI_HOME=\\\"/home/student/snps_tools_target/verdi/U-2023.03-SP1\\\"\\nexport PATH=\\\"$VCS_HOME/bin:$VERDI_HOME/bin:$PATH\\\"\\nexport SNPSLMD_LICENSE_FILE=\\\"27021@14.139.1.126\\\"\\ncd /home/student/Documents/RISC-V-Based-Cryptographic-Telemetry-Gateway-SoC/run\\nvcs -full64 -kdb -debug_access+all -f run.f -o simv\\n./simv\",\"WaitMsBeforeAsync\":10000,\"toolSummary\":\"Compile and run simulation with Synopsys environment\"}"}}}
-SHELL=/bin/bash
+TERM=xterm-256color
 VTE_VERSION=5204
-TERM=dumb
+SHELL=/bin/bash
 QT_IM_MODULE=ibus
 XMODIFIERS=@im=ibus
 DBUS_STARTER_BUS_TYPE=session
 XDG_CURRENT_DESKTOP=GNOME
-GNOME_TERMINAL_SERVICE=:1.89
-VERDI_HOME=/home/student/snps_tools_target/verdi/U-2023.03-SP1
-XDG_SEAT=seat0
+GNOME_TERMINAL_SERVICE=:1.74
 SHLVL=3
-MANPATH=:
-JJ_PAGER=cat
-ANTIGRAVITY_LS_VERSION=cli-1.4.12
-HGEDITOR=false
-MODULEPATH=/etc/scl/modulefiles:/etc/scl/modulefiles:/usr/share/Modules/modulefiles:/etc/modulefiles:/usr/share/modulefiles
+XDG_SEAT=seat0
+MANPATH=/usr/share/man:
+MODULEPATH=/etc/scl/modulefiles:/etc/scl/modulefiles:/etc/scl/modulefiles:/usr/share/Modules/modulefiles:/etc/modulefiles:/usr/share/modulefiles
 GDMSESSION=gnome
 GNOME_DESKTOP_SESSION_ID=this-is-deprecated
 LOGNAME=student
-DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus,guid=12a003c6adf060689e12f83e6ae59ee7
+DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus,guid=1cb87df4df2ebf77220f5f656aeea722
 XDG_RUNTIME_DIR=/run/user/1000
-XAUTHORITY=/run/user/1000/.mutter-Xwaylandauth.H3K6X3
+XAUTHORITY=/run/user/1000/.mutter-Xwaylandauth.I9JUX3
 MODULEPATH_modshare=/usr/share/Modules/modulefiles:2:/etc/modulefiles:2:/usr/share/modulefiles:2
-PATH=/home/student/snps_tools_target/vcs/U-2023.03/bin:/home/student/snps_tools_target/verdi/U-2023.03-SP1/bin:/home/student/.gemini/antigravity-cli/bin:/home/student/.local/bin:/home/student/tools/texinfo/bin:/home/student/.local/bin:/home/student/.local/bin:/home/student/tools/texinfo/bin:/home/student/.local/bin:/home/student/bin:/usr/share/Modules/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin
-VCS_HOME=/home/student/snps_tools_target/vcs/U-2023.03
+PATH=/home/student/snps_tools_target/syn/T-2022.03-SP5/bin:/home/student/snps_tools_target/sentaurus/T-2022.03-SP2/bin:/home/student/snps_tools_target/prime/U-2022.12-SP3/bin:/home/student/snps_tools_target/vcs/U-2023.03/bin:/home/student/snps_tools_target/verdi/U-2023.03-SP1/bin:/home/student/snps_tools_target/finesim/U-2023.03/bin:/home/student/.local/bin:/home/student/tools/texinfo/bin:/home/student/.local/bin:/home/student/.local/bin:/home/student/tools/texinfo/bin:/home/student/.local/bin:/home/student/bin:/usr/share/Modules/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin
 GUESTFISH_OUTPUT=\e[0m
-ANTIGRAVITY_CSRF_TOKEN=a6dd84e6-d5e8-4016-b05a-d9e95e427f69
 DEBUGINFOD_URLS=https://debuginfod.centos.org/ 
 MODULESHOME=/usr/share/Modules
 HISTSIZE=1000
-SESSION_MANAGER=local/unix:@/tmp/.ICE-unix/4505,unix/unix:/tmp/.ICE-unix/4505
+SESSION_MANAGER=local/unix:@/tmp/.ICE-unix/3914,unix/unix:/tmp/.ICE-unix/3914
 LESSOPEN=||/usr/bin/lesspipe.sh %s
-GIT_PAGER=cat
 BASH_FUNC_which%%=() {  ( alias;
  eval ${which_declare} ) | /usr/bin/which --tty-only --read-alias --read-functions --show-tilde --show-dot $@
 }
@@ -314,7 +307,25 @@ BASH_FUNC_scl%%=() {  if [ "$1" = "load" -o "$1" = "unload" ]; then
 }
 BASH_FUNC_ml%%=() {  module ml "$@"
 }
-_=./simv
+_=/usr/bin/csh
+HOSTTYPE=x86_64-linux
+VENDOR=unknown
+OSTYPE=linux
+MACHTYPE=x86_64
+GROUP=student
+HOST=vlsi64.vce.ac.in
+MODULES_USE_COMPAT_VERSION=0
+SNPSLMD_LICENSE_FILE=27021@14.139.1.126
+FINESIM_HOME=/home/student/snps_tools_target/finesim/U-2023.03
+FINESIM_LIC=27021@14.139.1.126
+VERDI_HOME=/home/student/snps_tools_target/verdi/U-2023.03-SP1
+VERDI_LIC=27021@14.139.1.126
+VCS_HOME=/home/student/snps_tools_target/vcs/U-2023.03
+VCS_LIC=27021@14.139.1.126
+PRIMETIME=/home/student/snps_tools_target/prime/U-2022.12-SP3
+PRIMETIME_LIC=27021@14.139.1.126
+sentaurus_HOME=/home/student/snps_tools_target/sentaurus/T-2022.03-SP2
+DESIGNCOMPILER=/home/student/snps_tools_target/syn/T-2022.03-SP5
 VCS_PATHMAP_PRELOAD_DONE=1
 VCS_STACK_EXEC=true
 VCS_EXEC_DONE=1
@@ -324,149 +335,147 @@ SPECMAN_OUTPUT_TO_TTY=1
 FLEXLM_BORROWFILE=/home/student/.vlsi64.vce.ac.in-borrow.txt
 Runtime command line arguments:
 argv[0]=./simv
-243 profile - 100
-          CPU/Mem usage: 0.010 sys,  0.110 user,  298.86M mem
-244 Elapsed time:    0:00:03    Sat Oct 31 14:23:40 2026
-245 User CPU time used: 0 seconds
-246 System CPU time used: 0 seconds
-247 pliAppInit
-248 [SC]Init: MemoryConsumed=0.00MB ElapsedTime=0hour 0min. 0sec.
-249 FSDB_GATE is set.
-250 FSDB_RTL is set.
-251 FSDB_ALIAS_ARRAY_ELEM is set to 4294967295.
-252 Enable Parallel Dumping.
-253 pliAppMiscSet: New Sim Round
-254 pliEntryInit
-255 LIBSSCORE=found /home/student/snps_tools_target/verdi/U-2023.03-SP1/share/PLI/lib/LINUXAMD64/libsscore_vcs202303.so through $NOVAS_HOME setting.
-256 FSDB Dumper for VCS, Release Verdi_U-2023.03-SP1, Linux x86_64/64bit, 05/28/2023
-257 (C) 1996 - 2023 by Synopsys, Inc.
-258 sps_call_fsdbDumpfile_main at 0 : ../tb/tb_soc_c_test.sv(405)
-259 argv[0]: (handle) tb_soc_c_test.fsdb_path
-260 *Verdi* FSDB WARNING: The FSDB file already exists. Overwriting the FSDB file may crash the programs that are using this file.
-261 *Verdi* : Create FSDB file 'dump.fsdb'
-262 [spi_vcs_vd_ppi_create_root]: no upf option
-263 compile option from '/home/student/Documents/RISC-V-Based-Cryptographic-Telemetry-Gateway-SoC/run/simv.daidir/vcs_rebuild'.
-264   "vcs '-full64' '-kdb' '-debug_access+all' '-f' 'run.f' '-o' 'simv' 2>&1"
-265 DVDI_is_vir_unload_enabled is enable
-266 FSDB_VCS_ENABLE_NATIVE_VC is enable
-267 sps_call_fsdbDumpvars_vd_main at 0 : ../tb/tb_soc_c_test.sv(406)
-268 argv[0]: (0)
-269 argv[1]: (handle) tb_soc_c_test
-270 argv[2]: (+all)
-271 *Verdi* : Begin traversing the scope (tb_soc_c_test), layer (0).
-272 *Verdi* : Enable +all dumping.
-273 *Verdi* : End of traversing.
-274 pliAppHDL_DumpVarComplete traverse var: profile - 
-          CPU/Mem usage: 0.020 sys,  0.140 user,  416.79M mem
-                   incr: 0.000 sys,  0.030 user,  25.46M mem
-                   accu: 0.000 sys,  0.030 user,  25.46M mem
-              accu incr: 0.000 sys,  0.030 user,  25.46M mem
+254 profile - 100
+          CPU/Mem usage: 0.020 sys,  0.150 user,  333.64M mem
+255 Elapsed time:    0:00:01    Sat Nov  7 13:49:34 2026
+256 User CPU time used: 0 seconds
+257 System CPU time used: 0 seconds
+258 pliAppInit
+259 [SC]Init: MemoryConsumed=0.00MB ElapsedTime=0hour 0min. 0sec.
+260 FSDB_GATE is set.
+261 FSDB_RTL is set.
+262 FSDB_ALIAS_ARRAY_ELEM is set to 4294967295.
+263 Enable Parallel Dumping.
+264 pliAppMiscSet: New Sim Round
+265 pliEntryInit
+266 LIBSSCORE=found /home/student/snps_tools_target/verdi/U-2023.03-SP1/share/PLI/lib/LINUXAMD64/libsscore_vcs202303.so through $NOVAS_HOME setting.
+267 FSDB Dumper for VCS, Release Verdi_U-2023.03-SP1, Linux x86_64/64bit, 05/28/2023
+268 (C) 1996 - 2023 by Synopsys, Inc.
+269 sps_call_fsdbDumpfile_main at 0 : ../tb/tb_top.sv(551)
+270 argv[0]: (soc_vips_tb.fsdb)
+271 *Verdi* FSDB WARNING: The FSDB file already exists. Overwriting the FSDB file may crash the programs that are using this file.
+272 *Verdi* : Create FSDB file 'soc_vips_tb.fsdb'
+273 [spi_vcs_vd_ppi_create_root]: no upf option
+274 compile option from '/home/student/Documents/RISC-V-Based-Cryptographic-Telemetry-Gateway-SoC/run/simv.daidir/vcs_rebuild'.
+275   "vcs '-full64' '-sverilog' '-ntb_opts' 'uvm' '-debug_access+all' '-kdb' '-f' 'run_vip.f' '-o' 'simv' 2>&1"
+276 DVDI_is_vir_unload_enabled is enable
+277 FSDB_VCS_ENABLE_NATIVE_VC is enable
+278 sps_call_fsdbDumpvars_vd_main at 0 : ../tb/tb_top.sv(552)
+279 argv[0]: (0)
+280 argv[1]: (handle) tb_top
+281 argv[2]: (+all)
+282 *Verdi* : Begin traversing the scope (tb_top), layer (0).
+283 *Verdi* : Enable +all dumping.
+284 *Verdi* : End of traversing.
+285 pliAppHDL_DumpVarComplete traverse var: profile - 
+          CPU/Mem usage: 0.030 sys,  0.170 user,  435.00M mem
+                   incr: 0.000 sys,  0.020 user,  8.88M mem
+                   accu: 0.000 sys,  0.020 user,  8.88M mem
+              accu incr: 0.000 sys,  0.020 user,  8.88M mem
 
-          Count usage: 4778 var,  3420 idcode,  1494 callback
-                 incr: 4778 var,  3420 idcode,  1494 callback
-                 accu: 4778 var,  3420 idcode,  1494 callback
-            accu incr: 4778 var,  3420 idcode,  1494 callback
-275 Elapsed time:    0:00:04    Sat Oct 31 14:23:41 2026
-276 User CPU time used: 0 seconds
-277 System CPU time used: 0 seconds
-278 pliAppHDL_DumpVarComplete: profile - 
-          CPU/Mem usage: 0.020 sys,  0.140 user,  417.85M mem
-                   incr: 0.000 sys,  0.000 user,  1.05M mem
-                   accu: 0.000 sys,  0.030 user,  26.51M mem
-              accu incr: 0.000 sys,  0.000 user,  1.05M mem
-
-          Count usage: 4778 var,  3420 idcode,  1494 callback
-                 incr: 0 var,  0 idcode,  0 callback
-                 accu: 4778 var,  3420 idcode,  1494 callback
-            accu incr: 0 var,  0 idcode,  0 callback
-279 Elapsed time:    0:00:04    Sat Oct 31 14:23:41 2026
-280 User CPU time used: 0 seconds
-281 System CPU time used: 0 seconds
-282 sps_call_fsdbDumpsva_vd_main at 0 : ../tb/tb_soc_c_test.sv(407)
-283 *Verdi* : Begin traversing the SVA assertions, layer (0).
-284 *Verdi* : End of traversing the SVA assertions.
-285 pliAppHDL_DumpSVAComplete traverse var: profile - 
-          CPU/Mem usage: 0.020 sys,  0.140 user,  417.85M mem
-                   incr: 0.000 sys,  0.000 user,  0.00M mem
-                   accu: 0.000 sys,  0.000 user,  0.00M mem
-              accu incr: 0.000 sys,  0.000 user,  0.00M mem
-
-          Count usage: 4807 var,  3449 idcode,  1494 callback
-                 incr: 29 var,  29 idcode,  0 callback
-                 accu: 29 var,  29 idcode,  0 callback
-            accu incr: 29 var,  29 idcode,  0 callback
-286 Elapsed time:    0:00:04    Sat Oct 31 14:23:41 2026
+          Count usage: 4817 var,  3442 idcode,  1515 callback
+                 incr: 4817 var,  3442 idcode,  1515 callback
+                 accu: 4817 var,  3442 idcode,  1515 callback
+            accu incr: 4817 var,  3442 idcode,  1515 callback
+286 Elapsed time:    0:00:01    Sat Nov  7 13:49:34 2026
 287 User CPU time used: 0 seconds
 288 System CPU time used: 0 seconds
-289 pliAppHDL_DumpSVAComplete: profile - 
-          CPU/Mem usage: 0.020 sys,  0.140 user,  417.85M mem
-                   incr: 0.000 sys,  0.000 user,  0.00M mem
-                   accu: 0.000 sys,  0.000 user,  0.00M mem
-              accu incr: 0.000 sys,  0.000 user,  0.00M mem
+289 pliAppHDL_DumpVarComplete: profile - 
+          CPU/Mem usage: 0.030 sys,  0.170 user,  436.06M mem
+                   incr: 0.000 sys,  0.000 user,  1.05M mem
+                   accu: 0.000 sys,  0.020 user,  9.94M mem
+              accu incr: 0.000 sys,  0.000 user,  1.05M mem
 
-          Count usage: 4807 var,  3449 idcode,  1494 callback
+          Count usage: 4817 var,  3442 idcode,  1515 callback
                  incr: 0 var,  0 idcode,  0 callback
-                 accu: 29 var,  29 idcode,  0 callback
+                 accu: 4817 var,  3442 idcode,  1515 callback
             accu incr: 0 var,  0 idcode,  0 callback
-290 Elapsed time:    0:00:04    Sat Oct 31 14:23:41 2026
+290 Elapsed time:    0:00:01    Sat Nov  7 13:49:34 2026
 291 User CPU time used: 0 seconds
 292 System CPU time used: 0 seconds
-293 sps_call_fsdbDumpMDA_vd_main at 0 : ../tb/tb_soc_c_test.sv(408)
-294 *Verdi* : Begin traversing the MDAs, layer (0).
-295 *Verdi* : Enable +mda and +packedmda dumping.
-296 *Verdi* : End of traversing the MDAs.
-297 pliAppHDL_DumpVarComplete traverse var: profile - 
-          CPU/Mem usage: 0.020 sys,  0.140 user,  418.00M mem
-                   incr: 0.000 sys,  0.000 user,  0.15M mem
-                   accu: 0.000 sys,  0.000 user,  0.15M mem
-              accu incr: 0.000 sys,  0.000 user,  0.15M mem
+293 sps_call_fsdbDumpsva_vd_main at 0 : ../tb/tb_top.sv(553)
+294 *Verdi* : Begin traversing the SVA assertions, layer (0).
+295 *Verdi* : End of traversing the SVA assertions.
+296 pliAppHDL_DumpSVAComplete traverse var: profile - 
+          CPU/Mem usage: 0.030 sys,  0.180 user,  436.06M mem
+                   incr: 0.000 sys,  0.010 user,  0.00M mem
+                   accu: 0.000 sys,  0.010 user,  0.00M mem
+              accu incr: 0.000 sys,  0.010 user,  0.00M mem
 
-          Count usage: 5035 var,  3453 idcode,  1495 callback
+          Count usage: 4848 var,  3473 idcode,  1515 callback
+                 incr: 31 var,  31 idcode,  0 callback
+                 accu: 31 var,  31 idcode,  0 callback
+            accu incr: 31 var,  31 idcode,  0 callback
+297 Elapsed time:    0:00:01    Sat Nov  7 13:49:34 2026
+298 User CPU time used: 0 seconds
+299 System CPU time used: 0 seconds
+300 pliAppHDL_DumpSVAComplete: profile - 
+          CPU/Mem usage: 0.030 sys,  0.180 user,  436.06M mem
+                   incr: 0.000 sys,  0.000 user,  0.00M mem
+                   accu: 0.000 sys,  0.010 user,  0.00M mem
+              accu incr: 0.000 sys,  0.000 user,  0.00M mem
+
+          Count usage: 4848 var,  3473 idcode,  1515 callback
+                 incr: 0 var,  0 idcode,  0 callback
+                 accu: 31 var,  31 idcode,  0 callback
+            accu incr: 0 var,  0 idcode,  0 callback
+301 Elapsed time:    0:00:01    Sat Nov  7 13:49:34 2026
+302 User CPU time used: 0 seconds
+303 System CPU time used: 0 seconds
+304 sps_call_fsdbDumpMDA_vd_main at 0 : ../tb/tb_top.sv(554)
+305 *Verdi* : Begin traversing the MDAs, layer (0).
+306 *Verdi* : Enable +mda and +packedmda dumping.
+307 *Verdi* : End of traversing the MDAs.
+308 pliAppHDL_DumpVarComplete traverse var: profile - 
+          CPU/Mem usage: 0.030 sys,  0.180 user,  436.20M mem
+                   incr: 0.000 sys,  0.000 user,  0.14M mem
+                   accu: 0.000 sys,  0.000 user,  0.14M mem
+              accu incr: 0.000 sys,  0.000 user,  0.14M mem
+
+          Count usage: 5076 var,  3477 idcode,  1516 callback
                  incr: 228 var,  4 idcode,  1 callback
                  accu: 228 var,  4 idcode,  1 callback
             accu incr: 228 var,  4 idcode,  1 callback
-298 Elapsed time:    0:00:04    Sat Oct 31 14:23:41 2026
-299 User CPU time used: 0 seconds
-300 System CPU time used: 0 seconds
-301 pliAppHDL_DumpVarComplete: profile - 
-          CPU/Mem usage: 0.020 sys,  0.140 user,  418.00M mem
+309 Elapsed time:    0:00:02    Sat Nov  7 13:49:35 2026
+310 User CPU time used: 0 seconds
+311 System CPU time used: 0 seconds
+312 pliAppHDL_DumpVarComplete: profile - 
+          CPU/Mem usage: 0.030 sys,  0.180 user,  436.20M mem
                    incr: 0.000 sys,  0.000 user,  0.00M mem
-                   accu: 0.000 sys,  0.000 user,  0.15M mem
+                   accu: 0.000 sys,  0.000 user,  0.14M mem
               accu incr: 0.000 sys,  0.000 user,  0.00M mem
 
-          Count usage: 5035 var,  3453 idcode,  1495 callback
+          Count usage: 5076 var,  3477 idcode,  1516 callback
                  incr: 0 var,  0 idcode,  0 callback
                  accu: 228 var,  4 idcode,  1 callback
             accu incr: 0 var,  0 idcode,  0 callback
-302 Elapsed time:    0:00:04    Sat Oct 31 14:23:41 2026
-303 User CPU time used: 0 seconds
-304 System CPU time used: 0 seconds
-305 sps_call_fsdbDumpflush_vd_main at 736010000 : ../tb/tb_soc_c_test.sv(468)
-306 *Verdi* : Flush all FSDB Files at 736,010,000 ps.
-307 End of simulation at 736010000
-308 Memory usage: 499.139 M
-309 Maximum resident set size: 352 MB
-310 Hard page faults: 0
-311 Soft page faults: 16153
-312 Elapsed time:    0:00:04    Sat Oct 31 14:23:41 2026
-313 User CPU time used: 0 seconds
-314 System CPU time used: 0 seconds
-315 Begin FSDB profile info:
-316 FSDB Writer : bc1(151870) bcn(629826) mtf/stf(0/1)
-FSDB Writer elapsed time : flush(0.059217) io wait(0.000000) theadpool wait(0.000000)
+313 Elapsed time:    0:00:02    Sat Nov  7 13:49:35 2026
+314 User CPU time used: 0 seconds
+315 System CPU time used: 0 seconds
+316 End of simulation at 579290000
+317 Memory usage: 513.012 M
+318 Maximum resident set size: 167 MB
+319 Hard page faults: 0
+320 Soft page faults: 19578
+321 Elapsed time:    0:00:02    Sat Nov  7 13:49:35 2026
+322 User CPU time used: 0 seconds
+323 System CPU time used: 0 seconds
+324 Begin FSDB profile info:
+325 FSDB Writer : bc1(233355) bcn(478615) mtf/stf(0/0)
+FSDB Writer elapsed time : flush(0.035810) io wait(0.000000) theadpool wait(0.000000)
 FSDB Writer cpu time : MT Compression : 0
-317 End FSDB profile info
-318 FSDB closed. Name: dump.fsdb Size: 100053
-319 Parallel profile     - ProducerThread:1 ConsumerThread:1 Buffer:64MB
-320                      - BlockUsed:9 Acquire:0 BufferUsed:14055219
-321                      - Flush:6 Expand:0 ProducerWait:0 ConsumerWait:7
-322                      - MainProducerTime:0.309135293 TotalConsumerTime:0.015192534
-323                      - ElapsedTime:0.489938000
-324 Producer   0 profile - BlockUsed:9 Acquire:0 BufferUsed:14055219
-325 Consumer   0 profile - Affinity:-1 CPUTime:0.015192534 LifeTime:0.140472418 (0.11%)
-326                      - BlockUsed:9 Acquire:0 BufferUsed:14055219
-327 SimExit
-328 Elapsed time:    0:00:04    Sat Oct 31 14:23:41 2026
-329 User CPU time used: 0 seconds
-330 System CPU time used: 0 seconds
-331 Sim process exit
+326 End FSDB profile info
+327 FSDB closed. Name: soc_vips_tb.fsdb Size: 96524
+328 Parallel profile     - ProducerThread:1 ConsumerThread:1 Buffer:64MB
+329                      - BlockUsed:7 Acquire:0 BufferUsed:11909668
+330                      - Flush:5 Expand:0 ProducerWait:0 ConsumerWait:5
+331                      - MainProducerTime:0.346232820 TotalConsumerTime:0.014244639
+332                      - ElapsedTime:0.464745000
+333 Producer   0 profile - BlockUsed:7 Acquire:0 BufferUsed:11909668
+334 Consumer   0 profile - Affinity:-1 CPUTime:0.014244639 LifeTime:0.091397795 (0.16%)
+335                      - BlockUsed:7 Acquire:0 BufferUsed:11909668
+336 SimExit
+337 Elapsed time:    0:00:02    Sat Nov  7 13:49:35 2026
+338 User CPU time used: 0 seconds
+339 System CPU time used: 0 seconds
+340 Sim process exit

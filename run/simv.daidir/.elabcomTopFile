@@ -1,1 +1,1 @@
-aes_key_expand_128 tb_soc_c_test
+uvm_custom_install_recording uvm_custom_install_verdi_recording aes_key_expand_128 tb_top

@@ -1,12 +1,12 @@
 // =============================================================================
 // File        : tb/tb_top.sv
 // Module      : tb_top
-// Description : Unified Top-Level UVM Testbench integrating both VIPs:
-//               - GPIO VIP (gpio_vip_if, gpio_vip_pkg)
-//               - UART VIP (uart_vip_if, uart_vip_pkg)
+// Description : Unified Top-Level UVM Testbench integrating external VIPs:
+//               - GPIO VIP (gpio_vip_if, gpio_vip_pkg) -> external gpio pins
+//               - UART VIP (uart_vip_if, uart_vip_pkg) -> external uart pins
 //               Connected to the RISC-V Cryptographic Telemetry Gateway SoC (soc_top).
-//               Supports UVM VIP tests (gpio_vip_test, uart_vip_test) AND
-//               DPI-C C firmware test suite (soc_c_test).
+//               Pure external interface verification with zero internal AXI signals
+//               in the VIPs.
 // =============================================================================
 
 `timescale 1ns/1ps
@@ -49,24 +49,13 @@ module tb_top;
     end
 
     // -------------------------------------------------------------------------
-    // VIP Interface Instances
+    // Pure External VIP Interface Instances
     // -------------------------------------------------------------------------
-    gpio_vip_if gpio_vif();
-    uart_vip_if uart_vif();
-
-    // Assign Clock & Reset to GPIO VIP interface
-    assign gpio_vif.clk     = clk;
-    assign gpio_vif.aclk    = clk;
-    assign gpio_vif.aresetn = aresetn;
-
-    // Assign Clocks & Reset to UART VIP interface
-    assign uart_vif.clk           = clk;
-    assign uart_vif.axi_aclk_i    = clk;
-    assign uart_vif.fixed_clk_i   = uart_clk;
-    assign uart_vif.axi_aresetn_i = aresetn;
+    gpio_vip_if gpio_vif(.clk(clk), .aresetn(aresetn));
+    uart_vip_if uart_vif(.clk(clk), .aresetn(aresetn));
 
     // -------------------------------------------------------------------------
-    // Signals & Multiplexing between VIPs, DPI-C C Tests, and SoC Top
+    // External SoC Peripheral Wires
     // -------------------------------------------------------------------------
     wire        soc_uart_tx;
     wire        soc_uart_rx;
@@ -81,20 +70,21 @@ module tb_top;
     wire        soc_dma_done;
     wire        soc_dma_error;
 
-    logic        uart_tb_rx_override = 1'b0;
-    logic        uart_tb_rx_val = 1'b1;
-    assign soc_uart_rx          = uart_tb_rx_override ? uart_tb_rx_val : uart_vif.uart_rx_i;
-    assign uart_vif.uart_tx_o   = soc_uart_tx;
-    assign uart_vif.read_interrupt_o = soc_uart_irq;
+    // Direct External Interface Connections:
+    // UART External Pins
+    assign soc_uart_rx       = uart_vif.uart_rx;
+    assign uart_vif.uart_tx  = soc_uart_tx;
+    assign uart_vif.uart_irq = soc_uart_irq;
 
-    logic [63:0] gpio_tb_in = 64'h0;
-    logic        gpio_tb_in_override = 1'b0;
-    assign soc_gpio_i           = gpio_tb_in_override ? gpio_tb_in : gpio_vif.gpio_i;
+    // GPIO External Pins
+    assign soc_gpio_i           = gpio_vif.gpio_i;
     assign gpio_vif.gpio_o      = soc_gpio_o;
     assign gpio_vif.gpio_dir_o  = soc_gpio_dir_o;
     assign gpio_vif.gpio_intr_o = soc_gpio_intr;
 
-    // AXI Master Signals (driven by tb_top DPI-C / C test suite)
+    // -------------------------------------------------------------------------
+    // SoC AXI4 Master 0 Port (Directly driven by CPU / Testbench Master)
+    // -------------------------------------------------------------------------
     logic [7:0]   m_awid;
     logic [31:0]  m_awaddr;
     logic [7:0]   m_awlen;
@@ -164,85 +154,7 @@ module tb_top;
         m_arqos   = '0;
         m_arvalid = 1'b0;
         m_rready  = 1'b0;
-
-        uart_vif.uart_rx_i       = 1'b1;
-        uart_vif.axi_arid_i      = '0;
-        uart_vif.axi_araddr_i    = '0;
-        uart_vif.axi_arvalid_i   = 1'b0;
-        uart_vif.axi_rready_i    = 1'b0;
-        uart_vif.axi_awid_i      = '0;
-        uart_vif.axi_awaddr_i    = '0;
-        uart_vif.axi_awvalid_i   = 1'b0;
-        uart_vif.axi_wdata_i     = '0;
-        uart_vif.axi_wstrb_i     = '0;
-        uart_vif.axi_wvalid_i    = 1'b0;
-        uart_vif.axi_bready_i    = 1'b0;
-
-        gpio_vif.gpio_i          = '0;
-        gpio_vif.s_axi_awaddr    = '0;
-        gpio_vif.s_axi_awprot    = '0;
-        gpio_vif.s_axi_awvalid   = 1'b0;
-        gpio_vif.s_axi_wdata     = '0;
-        gpio_vif.s_axi_wstrb     = '0;
-        gpio_vif.s_axi_wvalid    = 1'b0;
-        gpio_vif.s_axi_bready    = 1'b0;
-        gpio_vif.s_axi_araddr    = '0;
-        gpio_vif.s_axi_arprot    = '0;
-        gpio_vif.s_axi_arvalid   = 1'b0;
-        gpio_vif.s_axi_rready    = 1'b0;
     end
-
-    // Interconnect between AXI Master, UART VIP AXI, and soc_top
-    wire axi_sel_uart_wr = (uart_vif.axi_awvalid_i === 1'b1);
-    wire axi_sel_uart_rd = (uart_vif.axi_arvalid_i === 1'b1);
-
-    wire [7:0]  dut_awid    = axi_sel_uart_wr ? {4'h0, uart_vif.axi_awid_i} : m_awid;
-    wire [31:0] dut_awaddr  = axi_sel_uart_wr ? {24'h4000_10, uart_vif.axi_awaddr_i} : m_awaddr;
-    wire        dut_awvalid = axi_sel_uart_wr ? uart_vif.axi_awvalid_i : m_awvalid;
-    wire        dut_awready;
-    assign uart_vif.axi_awready_o = axi_sel_uart_wr ? dut_awready : 1'b0;
-    assign m_awready              = !axi_sel_uart_wr ? dut_awready : 1'b0;
-
-    wire [31:0] dut_wdata   = axi_sel_uart_wr ? uart_vif.axi_wdata_i : m_wdata;
-    wire [3:0]  dut_wstrb   = axi_sel_uart_wr ? uart_vif.axi_wstrb_i : m_wstrb;
-    wire        dut_wvalid  = axi_sel_uart_wr ? uart_vif.axi_wvalid_i : m_wvalid;
-    wire        dut_wready;
-    assign uart_vif.axi_wready_o  = axi_sel_uart_wr ? dut_wready : 1'b0;
-    assign m_wready               = !axi_sel_uart_wr ? dut_wready : 1'b0;
-
-    wire [7:0]  dut_bid;
-    wire [1:0]  dut_bresp;
-    wire        dut_bvalid;
-    wire        dut_bready  = axi_sel_uart_wr ? uart_vif.axi_bready_i : m_bready;
-    assign uart_vif.axi_bid_o   = dut_bid[3:0];
-    assign uart_vif.axi_bresp_o = dut_bresp;
-    assign uart_vif.axi_bvalid_o= dut_bvalid;
-    assign m_bid                = dut_bid;
-    assign m_bresp              = dut_bresp;
-    assign m_bvalid             = dut_bvalid;
-
-    wire [7:0]  dut_arid    = axi_sel_uart_rd ? {4'h0, uart_vif.axi_arid_i} : m_arid;
-    wire [31:0] dut_araddr  = axi_sel_uart_rd ? {24'h4000_10, uart_vif.axi_araddr_i} : m_araddr;
-    wire        dut_arvalid = axi_sel_uart_rd ? uart_vif.axi_arvalid_i : m_arvalid;
-    wire        dut_arready;
-    assign uart_vif.axi_arready_o = axi_sel_uart_rd ? dut_arready : 1'b0;
-    assign m_arready              = !axi_sel_uart_rd ? dut_arready : 1'b0;
-
-    wire [7:0]  dut_rid;
-    wire [31:0] dut_rdata;
-    wire [1:0]  dut_rresp;
-    wire        dut_rlast;
-    wire        dut_rvalid;
-    wire        dut_rready  = axi_sel_uart_rd ? uart_vif.axi_rready_i : m_rready;
-    assign uart_vif.axi_rid_o   = dut_rid[3:0];
-    assign uart_vif.axi_rdata_o = dut_rdata;
-    assign uart_vif.axi_rresp_o = dut_rresp;
-    assign uart_vif.axi_rvalid_o= dut_rvalid;
-    assign m_rid                = dut_rid;
-    assign m_rdata              = dut_rdata;
-    assign m_rresp              = dut_rresp;
-    assign m_rlast              = dut_rlast;
-    assign m_rvalid             = dut_rvalid;
 
     // -------------------------------------------------------------------------
     // DUT: Integrated SoC Top-Level (soc_top)
@@ -257,48 +169,48 @@ module tb_top;
         .uart_clk            (uart_clk),
         .aresetn             (aresetn),
 
-        // External AXI Master 0
-        .ext_s00_axi_awid    (dut_awid),
-        .ext_s00_axi_awaddr  (dut_awaddr),
-        .ext_s00_axi_awlen   (8'h00),
-        .ext_s00_axi_awsize  (3'b010),
-        .ext_s00_axi_awburst (2'b01),
-        .ext_s00_axi_awlock  (1'b0),
-        .ext_s00_axi_awcache (4'b0010),
-        .ext_s00_axi_awprot  (3'b000),
-        .ext_s00_axi_awqos   (4'h0),
-        .ext_s00_axi_awvalid (dut_awvalid),
-        .ext_s00_axi_awready (dut_awready),
+        // External AXI Master 0 connected directly to testbench master
+        .ext_s00_axi_awid    (m_awid),
+        .ext_s00_axi_awaddr  (m_awaddr),
+        .ext_s00_axi_awlen   (m_awlen),
+        .ext_s00_axi_awsize  (m_awsize),
+        .ext_s00_axi_awburst (m_awburst),
+        .ext_s00_axi_awlock  (m_awlock),
+        .ext_s00_axi_awcache (m_awcache),
+        .ext_s00_axi_awprot  (m_awprot),
+        .ext_s00_axi_awqos   (m_awqos),
+        .ext_s00_axi_awvalid (m_awvalid),
+        .ext_s00_axi_awready (m_awready),
 
-        .ext_s00_axi_wdata   (dut_wdata),
-        .ext_s00_axi_wstrb   (dut_wstrb),
-        .ext_s00_axi_wlast   (1'b1),
-        .ext_s00_axi_wvalid  (dut_wvalid),
-        .ext_s00_axi_wready  (dut_wready),
+        .ext_s00_axi_wdata   (m_wdata),
+        .ext_s00_axi_wstrb   (m_wstrb),
+        .ext_s00_axi_wlast   (m_wlast),
+        .ext_s00_axi_wvalid  (m_wvalid),
+        .ext_s00_axi_wready  (m_wready),
 
-        .ext_s00_axi_bid     (dut_bid),
-        .ext_s00_axi_bresp   (dut_bresp),
-        .ext_s00_axi_bvalid  (dut_bvalid),
-        .ext_s00_axi_bready  (dut_bready),
+        .ext_s00_axi_bid     (m_bid),
+        .ext_s00_axi_bresp   (m_bresp),
+        .ext_s00_axi_bvalid  (m_bvalid),
+        .ext_s00_axi_bready  (m_bready),
 
-        .ext_s00_axi_arid    (dut_arid),
-        .ext_s00_axi_araddr  (dut_araddr),
-        .ext_s00_axi_arlen   (8'h00),
-        .ext_s00_axi_arsize  (3'b010),
-        .ext_s00_axi_arburst (2'b01),
-        .ext_s00_axi_arlock  (1'b0),
-        .ext_s00_axi_arcache (4'b0010),
-        .ext_s00_axi_arprot  (3'b000),
-        .ext_s00_axi_arqos   (4'h0),
-        .ext_s00_axi_arvalid (dut_arvalid),
-        .ext_s00_axi_arready (dut_arready),
+        .ext_s00_axi_arid    (m_arid),
+        .ext_s00_axi_araddr  (m_araddr),
+        .ext_s00_axi_arlen   (m_arlen),
+        .ext_s00_axi_arsize  (m_arsize),
+        .ext_s00_axi_arburst (m_arburst),
+        .ext_s00_axi_arlock  (m_arlock),
+        .ext_s00_axi_arcache (m_arcache),
+        .ext_s00_axi_arprot  (m_arprot),
+        .ext_s00_axi_arqos   (m_arqos),
+        .ext_s00_axi_arvalid (m_arvalid),
+        .ext_s00_axi_arready (m_arready),
 
-        .ext_s00_axi_rid     (dut_rid),
-        .ext_s00_axi_rdata   (dut_rdata),
-        .ext_s00_axi_rresp   (dut_rresp),
-        .ext_s00_axi_rlast   (dut_rlast),
-        .ext_s00_axi_rvalid  (dut_rvalid),
-        .ext_s00_axi_rready  (dut_rready),
+        .ext_s00_axi_rid     (m_rid),
+        .ext_s00_axi_rdata   (m_rdata),
+        .ext_s00_axi_rresp   (m_rresp),
+        .ext_s00_axi_rlast   (m_rlast),
+        .ext_s00_axi_rvalid  (m_rvalid),
+        .ext_s00_axi_rready  (m_rready),
 
         // DMA CSR slave interface (tied off)
         .dma_csr_awaddr      (32'h0),
@@ -321,14 +233,14 @@ module tb_top;
         .dma_csr_rvalid      (),
         .dma_csr_rready      (1'b0),
 
-        // Peripherals External I/O
+        // Peripherals External Boundary I/O Pins
         .uart_rx             (soc_uart_rx),
         .uart_tx             (soc_uart_tx),
         .gpio_i              (soc_gpio_i),
         .gpio_o              (soc_gpio_o),
         .gpio_dir_o          (soc_gpio_dir_o),
 
-        // Interrupts
+        // External Interrupt Observation Pins
         .uart_irq_o          (soc_uart_irq),
         .timer_irq_o         (soc_timer_irq),
         .aes_irq_o           (soc_aes_irq),
@@ -340,125 +252,96 @@ module tb_top;
     );
 
     // =========================================================================
-    // DPI-C Bridge Tasks (Callable from C Test Suite)
+    // DPI-C Bridge Tasks (Callable from C Firmware Test Suite)
     // =========================================================================
-    export "DPI-C" task sv_axi_write;
-    export "DPI-C" task sv_axi_read;
-    export "DPI-C" task sv_delay_cycles;
-    export "DPI-C" task sv_uart_send_byte;
-    export "DPI-C" task sv_uart_recv_byte;
-    export "DPI-C" task sv_uart_tx_loopback;
-    export "DPI-C" task sv_uart_b2b_tx;
-    export "DPI-C" task sv_set_gpio_in;
-    export "DPI-C" task sv_get_gpio_out;
-    export "DPI-C" task sv_get_irqs;
-
     import "DPI-C" context task soc_c_main(output int status);
 
-    // AXI single-beat 32-bit write
     task sv_axi_write(input int unsigned addr, input int unsigned data);
-        reg aw_done;
-        reg w_done;
+        bit aw_done, w_done;
         begin
             @(posedge clk);
             m_awid    <= 8'h01;
             m_awaddr  <= addr;
-            m_awlen   <= 8'h00;
-            m_awsize  <= 3'b010;
-            m_awburst <= 2'b01;
-            m_awlock  <= 1'b0;
-            m_awcache <= 4'b0010;
-            m_awprot  <= 3'b000;
-            m_awqos   <= 4'h0;
             m_awvalid <= 1'b1;
             m_wdata   <= data;
             m_wstrb   <= 4'hF;
-            m_wlast   <= 1'b1;
             m_wvalid  <= 1'b1;
             m_bready  <= 1'b1;
-            aw_done    = 1'b0;
-            w_done     = 1'b0;
+            aw_done   = 1'b0;
+            w_done    = 1'b0;
 
             while (!aw_done || !w_done) begin
                 @(posedge clk);
-                if (m_awvalid && dut_awready) begin
+                if (!aw_done && m_awready) begin
                     m_awvalid <= 1'b0;
                     aw_done = 1'b1;
                 end
-                if (m_wvalid && dut_wready) begin
+                if (!w_done && m_wready) begin
                     m_wvalid <= 1'b0;
-                    m_wlast  <= 1'b0;
                     w_done = 1'b1;
                 end
             end
 
-            while (!dut_bvalid) begin
+            while (!m_bvalid) begin
                 @(posedge clk);
             end
+
             m_bready <= 1'b0;
             @(posedge clk);
         end
     endtask
 
-    // AXI single-beat 32-bit read
     task sv_axi_read(input int unsigned addr, output int unsigned data);
-        reg ar_done;
+        bit ar_done;
         begin
             @(posedge clk);
             m_arid    <= 8'h01;
             m_araddr  <= addr;
-            m_arlen   <= 8'h00;
-            m_arsize  <= 3'b010;
-            m_arburst <= 2'b01;
-            m_arlock  <= 1'b0;
-            m_arcache <= 4'b0010;
-            m_arprot  <= 3'b000;
-            m_arqos   <= 4'h0;
             m_arvalid <= 1'b1;
             m_rready  <= 1'b1;
-            ar_done    = 1'b0;
+            ar_done   = 1'b0;
 
             while (!ar_done) begin
                 @(posedge clk);
-                if (m_arvalid && dut_arready) begin
+                if (m_arready) begin
                     m_arvalid <= 1'b0;
                     ar_done = 1'b1;
                 end
             end
 
-            while (!dut_rvalid) begin
+            while (!m_rvalid) begin
                 @(posedge clk);
             end
-            data = dut_rdata;
+
+            data     = m_rdata;
             m_rready <= 1'b0;
             @(posedge clk);
         end
     endtask
 
-    // Delay helper
+    task sv_wait_cycles(input int cycles);
+        repeat (cycles) @(posedge clk);
+    endtask
+
     task sv_delay_cycles(input int cycles);
         repeat (cycles) @(posedge clk);
     endtask
 
-    // Bit-bang transmit one byte to UART RX
     task sv_uart_send_byte(input byte unsigned byte_val);
         integer baud_clks, b;
         begin
             baud_clks = BAUD_DIV;
-            uart_tb_rx_override = 1'b1;
-            uart_tb_rx_val = 1'b0; // start bit
+            uart_vif.uart_rx <= 1'b0; // start bit
             repeat (baud_clks) @(posedge uart_clk);
             for (b = 0; b < 8; b = b + 1) begin
-                uart_tb_rx_val = byte_val[b];
+                uart_vif.uart_rx <= byte_val[b];
                 repeat (baud_clks) @(posedge uart_clk);
             end
-            uart_tb_rx_val = 1'b1; // stop bit
+            uart_vif.uart_rx <= 1'b1; // stop bit
             repeat (baud_clks) @(posedge uart_clk);
-            uart_tb_rx_override = 1'b0;
         end
     endtask
 
-    // Synchronously receive one byte from UART TX
     task sv_uart_recv_byte(output byte unsigned rx_byte);
         integer half_baud, baud_clks, b;
         begin
@@ -481,7 +364,6 @@ module tb_top;
         end
     endtask
 
-    // Concurrent TX loopback task: forks AXI THR write with UART receiver
     task sv_uart_tx_loopback(input byte unsigned tx_val, output byte unsigned rx_cap);
         fork
             begin
@@ -493,7 +375,6 @@ module tb_top;
         join
     endtask
 
-    // Concurrent back-to-back TX task
     task sv_uart_b2b_tx(input byte unsigned b0, input byte unsigned b1, input byte unsigned b2,
                         output byte unsigned r0, output byte unsigned r1, output byte unsigned r2);
         fork
@@ -510,12 +391,9 @@ module tb_top;
         join
     endtask
 
-    // GPIO drive / sample helpers
     task sv_set_gpio_in(input int unsigned in_val_low, input int unsigned in_val_high);
         begin
-            gpio_tb_in = {in_val_high, in_val_low};
-            gpio_tb_in_override = 1'b1;
-            gpio_vif.gpio_i = gpio_tb_in;
+            gpio_vif.gpio_i = {in_val_high, in_val_low};
         end
     endtask
 
@@ -526,7 +404,6 @@ module tb_top;
         end
     endtask
 
-    // Interrupt line status helper
     task sv_get_irqs(output int unsigned uart_irq_val, output int unsigned timer_irq_val,
                      output int unsigned aes_irq_val, output int unsigned sha_irq_val,
                      output int unsigned dma_done_val, output int unsigned dma_error_val);
@@ -540,8 +417,20 @@ module tb_top;
         end
     endtask
 
+    export "DPI-C" task sv_axi_write;
+    export "DPI-C" task sv_axi_read;
+    export "DPI-C" task sv_wait_cycles;
+    export "DPI-C" task sv_delay_cycles;
+    export "DPI-C" task sv_uart_send_byte;
+    export "DPI-C" task sv_uart_recv_byte;
+    export "DPI-C" task sv_uart_tx_loopback;
+    export "DPI-C" task sv_uart_b2b_tx;
+    export "DPI-C" task sv_set_gpio_in;
+    export "DPI-C" task sv_get_gpio_out;
+    export "DPI-C" task sv_get_irqs;
+
     // -------------------------------------------------------------------------
-    // UVM Test Class for C Firmware Test Suite
+    // UVM Test Class for C Firmware Test Suite with Active External Pin VIPs
     // -------------------------------------------------------------------------
     class soc_c_test extends uvm_test;
         `uvm_component_utils(soc_c_test)
@@ -566,7 +455,7 @@ module tb_top;
             repeat (10) @(posedge clk);
             `uvm_info("SOC_C_TEST", "=========================================================", UVM_LOW)
             `uvm_info("SOC_C_TEST", " Executing C Firmware Test Suite on Integrated UVM VIP Top", UVM_LOW)
-            `uvm_info("SOC_C_TEST", " VIPs Active: GPIO VIP & UART VIP | DUT: soc_top", UVM_LOW)
+            `uvm_info("SOC_C_TEST", " VIPs Active: External GPIO & UART VIPs | DUT: soc_top   ", UVM_LOW)
             `uvm_info("SOC_C_TEST", "=========================================================", UVM_LOW)
 
             soc_c_main(c_fail_status);
@@ -576,6 +465,67 @@ module tb_top;
             end else begin
                 `uvm_error("SOC_C_TEST", $sformatf(">>> C TESTS FAILED: %0d failures <<<", c_fail_status))
             end
+            phase.drop_objection(this);
+        endtask
+    endclass
+
+    // -------------------------------------------------------------------------
+    // Integrated SoC Verification UVM Test: soc_vip_test
+    // Drives external pin stimulus via GPIO VIP and UART VIP
+    // -------------------------------------------------------------------------
+    class soc_vip_test extends uvm_test;
+        `uvm_component_utils(soc_vip_test)
+
+        gpio_vip_env gpio_env;
+        uart_vip_env uart_env;
+
+        function new(string name = "soc_vip_test", uvm_component parent = null);
+            super.new(name, parent);
+        endfunction
+
+        function void build_phase(uvm_phase phase);
+            super.build_phase(phase);
+            gpio_env = gpio_vip_env::type_id::create("gpio_env", this);
+            uart_env = uart_vip_env::type_id::create("uart_env", this);
+        endfunction
+
+        task run_phase(uvm_phase phase);
+            gpio_stimulus_seq gpio_seq;
+            uart_inject_seq   uart_seq;
+
+            phase.raise_objection(this);
+            wait (aresetn === 1'b1);
+            repeat (10) @(posedge clk);
+
+            `uvm_info("SOC_VIP_TEST", "=============================================================", UVM_LOW)
+            `uvm_info("SOC_VIP_TEST", " Starting External SoC Pin VIP Verification (GPIO + UART)   ", UVM_LOW)
+            `uvm_info("SOC_VIP_TEST", "=============================================================", UVM_LOW)
+
+            gpio_seq = gpio_stimulus_seq::type_id::create("gpio_seq");
+            uart_seq = uart_inject_seq::type_id::create("uart_seq");
+
+            // 1. Execute External GPIO Pin Stimulus (drives gpio_i[63:0])
+            `uvm_info("SOC_VIP_TEST", ">>> Executing External GPIO Pin Stimulus Suite...", UVM_LOW)
+            gpio_seq.start(gpio_env.agent.seqr);
+            `uvm_info("SOC_VIP_TEST", ">>> External GPIO Pin Stimulus Completed.", UVM_LOW)
+
+            #5000;
+
+            // 2. Configure UART via internal AXI so it can receive serial bytes
+            sv_axi_write(32'h4000_100C, 32'h0000_0080); // LCR: DLAB=1
+            sv_axi_write(32'h4000_1008, 32'h0000_01B2); // BAUD: 434 (115200 baud)
+            sv_axi_write(32'h4000_100C, 32'h0000_0000); // LCR: 8N1, DLAB=0
+            sv_axi_write(32'h4000_1004, 32'h0000_0001); // IER: RX data IRQ enable
+
+            // 3. Execute External UART Serial Injection (drives uart_rx pin into SoC)
+            `uvm_info("SOC_VIP_TEST", ">>> Executing External UART Serial Injection Suite...", UVM_LOW)
+            uart_seq.start(uart_env.agent.seqr);
+            `uvm_info("SOC_VIP_TEST", ">>> External UART Serial Injection Completed.", UVM_LOW)
+
+            #10000;
+            `uvm_info("SOC_VIP_TEST", "=============================================================", UVM_LOW)
+            `uvm_info("SOC_VIP_TEST", " All External SoC Pin VIP Tests Completed Successfully!     ", UVM_LOW)
+            `uvm_info("SOC_VIP_TEST", "=============================================================", UVM_LOW)
             phase.drop_objection(this);
         endtask
     endclass
@@ -606,12 +556,12 @@ module tb_top;
 
         $display("=============================================================");
         $display(" [TB_TOP] Starting Integrated SoC VIP UVM Verification Top");
-        $display(" [TB_TOP] VIPs: UART VIP & GPIO VIP | DUT: soc_top");
+        $display(" [TB_TOP] VIPs: External UART VIP & GPIO VIP | DUT: soc_top");
         $display("=============================================================");
 
-        // Run test with fallback default
+        // Run test with fallback default to UVM VIP verification suite
         if (!$value$plusargs("UVM_TESTNAME=%s", test_name)) begin
-            test_name = "soc_c_test";
+            test_name = "soc_vip_test";
         end
         run_test(test_name);
     end
@@ -623,4 +573,4 @@ module tb_top;
         $finish;
     end
 
-endmodule
+endmodule : tb_top
