@@ -1,3 +1,0 @@
-[submodule "rtl/Cores-VeeR-EL2"]
-	path = rtl/Cores-VeeR-EL2
-	url = https://github.com/chipsalliance/Cores-VeeR-EL2.git
