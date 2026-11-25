@@ -82,7 +82,6 @@ In the **current integrated RTL** ([`rtl/soc_top.v`](rtl/soc_top.v)), `soc_top #
 | AES-256 accelerator (`rtl/aes/`) | Partial / Bugs Open | `aes_cipher_top`/`aes_inv_cipher_top` instantiate `aes_key_expand_256` (256-bit key), but `aes_core_top.v` retains multi-block, key-load, IV, and CBC-decrypt bugs (Section 8) |
 | DMA controller (`rtl/dma/dma_axi_top.sv`) | Integrated (Untested at SoC) | Wired to `s01`; `dma_csr_*` exported on `soc_top` pins and tied to `0` in `tb_top.sv`, `tb_soc_c_test.sv`, and `tb_soc_top.sv` |
 | VeeR EL2 wrapper (`rtl/veer_core_top.sv`) | Wrapper Only | Wrapper exists in repo (`USE_INTERNAL_CPU=1`), while upstream CHIPS Alliance EL2 core RTL/packages/headers/SRAMs are external and not bundled; TBs run with `USE_INTERNAL_CPU=0` |
-| AXI System SRAM / DMA target memory | Not Implemented | No RAM slave is attached to `axi_interconnect_wrap_2x5` (`soc_top` currently connects only peripheral slaves `m00`–`m04`) |
 
 ---
 
@@ -272,10 +271,10 @@ vcs -full64 -kdb +define+FSDB -f run_c_test.f -o simv_soc_c_test
    - `digest_valid_reg` (`sha_irq`) only updates on `STATUS` (`0x24`) register reads rather than latching `core_digest_valid` automatically upon digest completion.
 3. **UART FIFO Threshold Width (`rtl/uart/axi_uart_top.v`):**
    - `FIFO_THRESHOLD=90` exceeds the 16-entry FIFO depth and truncates in 5 bits to `26`.
-4. **DMA Connectivity & System SRAM (`rtl/soc_top.v`):**
-   - `dma_csr_*` is brought out to `soc_top` pins (unmapped from `axi_interconnect_wrap_2x5` and tied to `0` in all SoC testbenches), and no AXI System SRAM slave is connected for memory-backed DMA transfers.
+4. **DMA CSR Connectivity (`rtl/soc_top.v`):**
+   - `dma_csr_*` is brought out to `soc_top` pins (unmapped from `axi_interconnect_wrap_2x5` and tied to `0` in current SoC testbenches).
 5. **VeeR EL2 Execution (`USE_INTERNAL_CPU=1`):**
-   - Add the external CHIPS Alliance VeeR EL2 RTL/packages/headers/RAM models and wire an AXI slave target for firmware boot testing.
+   - Link the external CHIPS Alliance VeeR EL2 RTL/packages/headers/RAM models when enabling internal CPU simulation.
 
 ---
 
