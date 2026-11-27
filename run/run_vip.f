@@ -49,6 +49,10 @@
 +incdir+../rtl/aes
 +incdir+../tb/gpio_vip_uvm_tb
 +incdir+../tb/uart_vip_uvm_tb
++incdir+../tb/timer_vip_uvm_tb
++incdir+../tb/sha_vip_uvm_tb
++incdir+../tb/aes_vip_uvm_tb
++incdir+../tb/dma_vip_uvm_tb
 +incdir+../c_test
 +incdir+../tb
 
@@ -63,8 +67,9 @@
 ../rtl/interconnect/priority_encoder.v
 ../rtl/interconnect/arbiter.v
 ../rtl/interconnect/axi_interconnect.v
-../rtl/interconnect/axi_interconnect_wrap_2x5.v
+../rtl/interconnect/axi_interconnect_wrap_2x6.v
 ../rtl/interconnect/axi_to_axilite_bridge.v
+../rtl/mem/axi_sram.v
 
 // -----------------------------------------------------------------------------
 // AXI DMA Subsystem RTL
@@ -141,12 +146,23 @@
 // -----------------------------------------------------------------------------
 // UVM VIP Interfaces & Packages
 // -----------------------------------------------------------------------------
+../tb/soc_axi_if.sv
 ../tb/gpio_vip_uvm_tb/gpio_vip_if.sv
 ../tb/gpio_vip_uvm_tb/gpio_vip_pkg.sv
 ../tb/uart_vip_uvm_tb/uart_vip_if.sv
 ../tb/uart_vip_uvm_tb/uart_vip_pkg.sv
+../tb/timer_vip_uvm_tb/timer_vip_if.sv
+../tb/timer_vip_uvm_tb/timer_vip_pkg.sv
+../tb/sha_vip_uvm_tb/sha_vip_if.sv
+../tb/sha_vip_uvm_tb/sha_vip_pkg.sv
+../tb/aes_vip_uvm_tb/aes_vip_if.sv
+../tb/aes_vip_uvm_tb/aes_vip_pkg.sv
+../tb/dma_vip_uvm_tb/dma_vip_if.sv
+../tb/dma_vip_uvm_tb/dma_vip_pkg.sv
 
 // -----------------------------------------------------------------------------
-// Top-Level Testbench
+// Top-Level Testbench & Coverage Collector
 // -----------------------------------------------------------------------------
+../tb/soc_cov_pkg.sv
+../tb/soc_cov_collector.sv
 ../tb/tb_top.sv

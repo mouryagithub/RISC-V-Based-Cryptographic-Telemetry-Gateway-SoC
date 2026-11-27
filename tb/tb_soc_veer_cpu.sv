@@ -169,64 +169,199 @@ module tb_soc_veer_cpu;
 
     // -------------------------------------------------------------------------
     // Program Boot ROM with RISC-V Instructions targeting SoC Peripherals
+    // Covers TC_BOOT_01 (Boot, MRAC, sp/gp init, BSS zero, 0x0001 boot marker,
+    //                    peripheral init, WFI) and
+    //        TC_BOOT_02 (Nested subroutines, stack frames, 32-bit walking-1s &
+    //                    walking-0s across DCCM 0xF004_0000..0xF004_FFFC)
     // -------------------------------------------------------------------------
     // Address Map:
-    //   GPIO OUT  = 0x4000_3180 (reg_out_0)
-    //   GPIO OE   = 0x4000_3080 (reg_en_0)
-    //   TIMER CMP = 0x4000_2118 (COMPARE_LOWER0_0)
-    //   UART THR  = 0x4000_1000 (RBR/THR)
+    //   Boot IMEM = 0x8000_0000
+    //   DCCM      = 0xF004_0000..0xF004_FFFF (sp=0xF004_1000, gp=0xF004_0800)
+    //   GPIO OUT0 = 0x4000_3180 | GPIO OUT1 = 0x4000_3184
+    //   TIMER CMP = 0x4000_2118 | UART THR  = 0x4000_1000
     // -------------------------------------------------------------------------
     initial begin
         $display("=============================================================");
         $display(" Initializing Boot IMEM with RISC-V Firmware for VeeR EL2...");
         $display("=============================================================");
 
-        // Instruction 0 (0x8000_0000): addi x7, x0, 0x200       (x7 = 0x0000_0200 -> MRAC Region 4 Side-Effect bit)
+        // TC_BOOT_01: MRAC setup (Region 4 = 0x200 side-effect)
+        // 0x8000_0000: addi x7, x0, 0x200
         write_imem_word(32'h8000_0000, 32'h20000393);
-
-        // Instruction 1 (0x8000_0004): csrw 0x7C0, x7          (Set MRAC CSR 0x7C0 to enable non-cacheable/side-effect LSU)
+        // 0x8000_0004: csrw 0x7C0, x7
         write_imem_word(32'h8000_0004, 32'h7C039073);
-
-        // Instruction 2 (0x8000_0008): nop                      (Pipeline drain / sync)
+        // 0x8000_0008..0C: nop
         write_imem_word(32'h8000_0008, 32'h00000013);
-
-        // Instruction 3 (0x8000_000C): nop
         write_imem_word(32'h8000_000C, 32'h00000013);
+        // Setup sp (x2) = 0xF004_1000, gp (x3) = 0xF004_0800
+        // 0x8000_0010: lui  x2, 0xF0041
+        write_imem_word(32'h8000_0010, 32'hF0041137);
+        // 0x8000_0014: lui  x3, 0xF0041
+        write_imem_word(32'h8000_0014, 32'hF00411B7);
+        // 0x8000_0018: addi x3, x3, -2048  // x3 = 0xF004_0800 (DCCM BSS base)
+        write_imem_word(32'h8000_0018, 32'h80018193);
+        // Zero 4-word BSS segment in DCCM & verify zeroed
+        // 0x8000_001C: sw   x0, 0(x3)
+        write_imem_word(32'h8000_001C, 32'h0001A023);
+        // 0x8000_0020: sw   x0, 4(x3)
+        write_imem_word(32'h8000_0020, 32'h0001A223);
+        // 0x8000_0024: sw   x0, 8(x3)
+        write_imem_word(32'h8000_0024, 32'h0001A423);
+        // 0x8000_0028: sw   x0, 12(x3)
+        write_imem_word(32'h8000_0028, 32'h0001A623);
+        // 0x8000_002C: lw   x8, 0(x3)
+        write_imem_word(32'h8000_002C, 32'h0001A403);
+        // 0x8000_0030: lw   x9, 12(x3)
+        write_imem_word(32'h8000_0030, 32'h00C1A483);
+        // 0x8000_0034: or   x8, x8, x9
+        write_imem_word(32'h8000_0034, 32'h00946433);
+        // 0x8000_0038: bne  x8, x0, fail_spin
+        write_imem_word(32'h8000_0038, 32'h04041863);
+        // Write boot-started status word 0x0000_0001 to GPIO_OUT0 (0x4000_3180)
+        // 0x8000_003C: lui  x15, 0x40003  // GPIO_BASE
+        write_imem_word(32'h8000_003C, 32'h400037B7);
+        // 0x8000_0040: addi x8, x0, 1
+        write_imem_word(32'h8000_0040, 32'h00100413);
+        // 0x8000_0044: sw   x8, 0x180(x15)  // GPIO_OUT0 = 0x0000_0001
+        write_imem_word(32'h8000_0044, 32'h1887A023);
 
-        // Instruction 4 (0x8000_0010): lui x1, 0x40003          (x1 = 0x4000_3000, GPIO Base)
-        write_imem_word(32'h8000_0010, 32'h400030B7);
+        // TC_BOOT_02: Nested Subroutines + Walking-1s & Walking-0s across DCCM Boundaries (0xF004_0000 & 0xF004_FFFC)
+        // 0x8000_0048: jal  x1, func_outer
+        write_imem_word(32'h8000_0048, 32'h044000EF);
+        // 0x8000_004C: bne  x10, x0, fail_spin
+        write_imem_word(32'h8000_004C, 32'h02051E63);
+        // Write TC_BOOT_02 pass signature 0xB007_0002 to GPIO_OUT1 (0x4000_3184)
+        // 0x8000_0050: lui  x13, 0xB0070
+        write_imem_word(32'h8000_0050, 32'hB00706B7);
+        // 0x8000_0054: addi x13, x13, 2
+        write_imem_word(32'h8000_0054, 32'h00268693);
+        // 0x8000_0058: sw   x13, 0x184(x15)
+        write_imem_word(32'h8000_0058, 32'h18D7A223);
 
-        // Instruction 5 (0x8000_0014): lui x2, 0xA5A5A          (x2 = 0xA5A5A000)
-        write_imem_word(32'h8000_0014, 32'hA5A5A137);
+        // Existing SoC Check 3/4/5 peripheral writes:
+        // 0x8000_005C: lui  x14, 0xA5A5A
+        write_imem_word(32'h8000_005C, 32'hA5A5A737);
+        // 0x8000_0060: addi x14, x14, 0x5A5
+        write_imem_word(32'h8000_0060, 32'h5A570713);
+        // 0x8000_0064: sw   x14, 0x180(x15)  // GPIO_OUT0 = 0xA5A5A5A5
+        write_imem_word(32'h8000_0064, 32'h18E7A023);
+        // 0x8000_0068: lui  x16, 0x40002
+        write_imem_word(32'h8000_0068, 32'h40002837);
+        // 0x8000_006C: addi x17, x0, 0x123
+        write_imem_word(32'h8000_006C, 32'h12300893);
+        // 0x8000_0070: sw   x17, 0x118(x16)  // Timer CMP_L = 0x123
+        write_imem_word(32'h8000_0070, 32'h11182C23);
+        // 0x8000_0074: lui  x18, 0x40001
+        write_imem_word(32'h8000_0074, 32'h40001937);
+        // 0x8000_0078: addi x19, x0, 0x55
+        write_imem_word(32'h8000_0078, 32'h05500993);
+        // 0x8000_007C: sw   x19, 0(x18)  // UART THR = 0x55
+        write_imem_word(32'h8000_007C, 32'h01392023);
+        // 0x8000_0080: csrrsi x0, 0x7c6, 1 (VeeR MPMC.halt = 1 -> PMU/FW halt)
+        write_imem_word(32'h8000_0080, 32'h7C60E073);
+        // 0x8000_0084: jal  x0, 0
+        write_imem_word(32'h8000_0084, 32'h0000006F);
 
-        // Instruction 6 (0x8000_0018): addi x2, x2, 0x5A5       (x2 = 0xA5A5A5A5)
-        write_imem_word(32'h8000_0018, 32'h5A510113);
+        // fail_spin: @ 0x8000_0088
+        write_imem_word(32'h8000_0088, 32'h0000006F);
 
-        // Instruction 7 (0x8000_001C): sw x2, 0x180(x1)         (Store x2 to GPIO OUT_0: 0x4000_3180)
-        write_imem_word(32'h8000_001C, 32'h1820A023);
+        // func_outer: @ 0x8000_008C
+        // 0x8000_008C: addi x2, x2, -16
+        write_imem_word(32'h8000_008C, 32'hFF010113);
+        // 0x8000_0090: sw   x1, 12(x2)
+        write_imem_word(32'h8000_0090, 32'h00112623);
+        // 0x8000_0094: sw   x8, 8(x2)
+        write_imem_word(32'h8000_0094, 32'h00812423);
+        // 0x8000_0098: sw   x9, 4(x2)
+        write_imem_word(32'h8000_0098, 32'h00912223);
+        // 0x8000_009C: lui  x8, 0xF0040  // DCCM low boundary: 0xF004_0000
+        write_imem_word(32'h8000_009C, 32'hF0040437);
+        // 0x8000_00A0: lui  x9, 0xF0050
+        write_imem_word(32'h8000_00A0, 32'hF00504B7);
+        // 0x8000_00A4: addi x9, x9, -4  // DCCM high boundary: 0xF004_FFFC
+        write_imem_word(32'h8000_00A4, 32'hFFC48493);
+        // 0x8000_00A8: addi x5, x0, 1  // t0 = walking-1 bit (1 << 0)
+        write_imem_word(32'h8000_00A8, 32'h00100293);
+        // walk_loop: @ 0x8000_00AC
+        // 0x8000_00AC: xori x6, x5, -1  // t1 = walking-0 = ~t0
+        write_imem_word(32'h8000_00AC, 32'hFFF2C313);
+        // 0x8000_00B0: sw   x5, 0(x8)
+        write_imem_word(32'h8000_00B0, 32'h00542023);
+        // 0x8000_00B4: sw   x6, 0(x9)
+        write_imem_word(32'h8000_00B4, 32'h0064A023);
+        // 0x8000_00B8: lw   x11, 0(x8)
+        write_imem_word(32'h8000_00B8, 32'h00042583);
+        // 0x8000_00BC: lw   x12, 0(x9)
+        write_imem_word(32'h8000_00BC, 32'h0004A603);
+        // 0x8000_00C0: bne  x11, x5, walk_err
+        write_imem_word(32'h8000_00C0, 32'h00559C63);
+        // 0x8000_00C4: bne  x12, x6, walk_err
+        write_imem_word(32'h8000_00C4, 32'h00661A63);
+        // 0x8000_00C8: slli x5, x5, 1
+        write_imem_word(32'h8000_00C8, 32'h00129293);
+        // 0x8000_00CC: bne  x5, x0, walk_loop
+        write_imem_word(32'h8000_00CC, 32'hFE0290E3);
+        // 0x8000_00D0: jal  x1, func_inner  // nested call
+        write_imem_word(32'h8000_00D0, 32'h020000EF);
+        // 0x8000_00D4: jal  x0, outer_ret
+        write_imem_word(32'h8000_00D4, 32'h0080006F);
+        // walk_err: @ 0x8000_00D8
+        write_imem_word(32'h8000_00D8, 32'h00100513);
+        // outer_ret: @ 0x8000_00DC
+        write_imem_word(32'h8000_00DC, 32'h00412483);
+        write_imem_word(32'h8000_00E0, 32'h00812403);
+        write_imem_word(32'h8000_00E4, 32'h00C12083);
+        write_imem_word(32'h8000_00E8, 32'h01010113);
+        write_imem_word(32'h8000_00EC, 32'h00008067);
 
-        // Instruction 8 (0x8000_0020): lui x3, 0x40002          (x3 = 0x4000_2000, Timer Base)
-        write_imem_word(32'h8000_0020, 32'h400021B7);
+        // func_inner: @ 0x8000_00F0
+        write_imem_word(32'h8000_00F0, 32'hFF010113);
+        write_imem_word(32'h8000_00F4, 32'h00112623);
+        write_imem_word(32'h8000_00F8, 32'hCAFEC5B7);
+        write_imem_word(32'h8000_00FC, 32'hEEF58593);
+        write_imem_word(32'h8000_0100, 32'h00B12023);
+        write_imem_word(32'h8000_0104, 32'hFFF5C593);
+        write_imem_word(32'h8000_0108, 32'h00B12223);
+        write_imem_word(32'h8000_010C, 32'h00012603);
+        write_imem_word(32'h8000_0110, 32'h00412683);
+        write_imem_word(32'h8000_0114, 32'h00D64633);
+        write_imem_word(32'h8000_0118, 32'h00160513);
+        write_imem_word(32'h8000_011C, 32'h00C12083);
+        write_imem_word(32'h8000_0120, 32'h01010113);
+        write_imem_word(32'h8000_0124, 32'h00008067);
 
-        // Instruction 9 (0x8000_0024): addi x4, x0, 0x123       (x4 = 0x0000_0123)
-        write_imem_word(32'h8000_0024, 32'h12300213);
+        $display("   [IMEM] Loaded 74 RISC-V instructions (TC_BOOT_01 & TC_BOOT_02) into 0x8000_0000.");
+    end
 
-        // Instruction 10 (0x8000_0028): sw x4, 0x118(x3)        (Store x4 to Timer CMP_L: 0x4000_2118)
-        write_imem_word(32'h8000_0028, 32'h1041AC23);
+    // Continuous hardware snoops for TC_BOOT_01 / TC_BOOT_02
+    reg        boot_marker_seen = 1'b0;
+    reg        exc_seen         = 1'b0;
+    integer    dccm_wr_cnt      = 0;
+    integer    dccm_rd_cnt      = 0;
 
-        // Instruction 11 (0x8000_002C): lui x5, 0x40001         (x5 = 0x4000_1000, UART Base)
-        write_imem_word(32'h8000_002C, 32'h400012B7);
-
-        // Instruction 12 (0x8000_0030): addi x6, x0, 0x55       (x6 = 0x0000_0055)
-        write_imem_word(32'h8000_0030, 32'h05500313);
-
-        // Instruction 13 (0x8000_0034): sw x6, 0(x5)            (Store x6 to UART THR: 0x4000_1000)
-        write_imem_word(32'h8000_0034, 32'h0062A023);
-
-        // Instruction 14 (0x8000_0038): jal x0, 0              (Self-loop: j .)
-        write_imem_word(32'h8000_0038, 32'h0000006F);
-
-        $display("   [IMEM] Loaded 15 RISC-V instructions into 0x8000_0000.");
+    always @(posedge clk) begin
+        if (!aresetn) begin
+            boot_marker_seen <= 1'b0;
+            exc_seen         <= 1'b0;
+            dccm_wr_cnt      <= 0;
+            dccm_rd_cnt      <= 0;
+        end else begin
+            if (gpio_o[31:0] === 32'h0000_0001) begin
+                boot_marker_seen <= 1'b1;
+            end
+            if (u_soc_top.gen_veer_cpu.u_cpu.rvtop.trace_rv_i_exception_ip === 1'b1) begin
+                exc_seen <= 1'b1;
+                $display("   [ERR] Core exception @ PC=0x%08h ecause=0x%02h",
+                         u_soc_top.gen_veer_cpu.u_cpu.rvtop.trace_rv_i_address_ip,
+                         u_soc_top.gen_veer_cpu.u_cpu.rvtop.trace_rv_i_ecause_ip);
+            end
+            if (u_soc_top.gen_veer_cpu.u_cpu.rvtop.mem.dccm_wren === 1'b1) begin
+                dccm_wr_cnt <= dccm_wr_cnt + 1;
+            end
+            if (u_soc_top.gen_veer_cpu.u_cpu.rvtop.mem.dccm_rden === 1'b1) begin
+                dccm_rd_cnt <= dccm_rd_cnt + 1;
+            end
+        end
     end
 
     // -------------------------------------------------------------------------
@@ -246,8 +381,18 @@ module tb_soc_veer_cpu;
         $display(" Starting SoC VeeR-EL2 CPU Hardware Integration Test");
         $display("=============================================================");
 
-        // Hold reset for 10 clock cycles
-        repeat (10) @(posedge clk);
+        // TC_BOOT_01: Hold reset for 20 clock cycles and verify quiescent bus/IRQs
+        repeat (20) @(posedge clk);
+        if (u_soc_top.s00_bvalid === 1'b0 && u_soc_top.s00_rvalid === 1'b0 &&
+            gpio_o === 64'h0 && !uart_irq && !timer_irq && !aes_irq && !sha_irq &&
+            !dma_done && !dma_error) begin
+            $display("   [PASS] TC_BOOT_01 Reset quiescence verified across 20 cycles");
+            pass_count++;
+        end else begin
+            $display("   [FAIL] TC_BOOT_01 Bus/IRQs not quiescent during reset");
+            fail_count++;
+        end
+
         aresetn = 1'b1;
         $display("   [RESET] Released SoC system reset (aresetn = 1)");
 
@@ -294,7 +439,7 @@ module tb_soc_veer_cpu;
         // ---------------------------------------------------------------------
         fork
             begin : gpio_timeout
-                repeat (300) @(posedge clk);
+                repeat (5000) @(posedge clk);
                 if (gpio_o[31:0] !== 32'hA5A5A5A5) begin
                     $display("   [FAIL] GPIO OUT register not updated: got 0x%08h, expected 0xA5A5A5A5", gpio_o[31:0]);
                     fail_count++;
@@ -313,7 +458,7 @@ module tb_soc_veer_cpu;
         // ---------------------------------------------------------------------
         fork
             begin : timer_timeout
-                repeat (300) @(posedge clk);
+                repeat (5000) @(posedge clk);
                 if (u_soc_top.u_timer.reg_mtimecmp[31:0] !== 32'h123) begin
                     $display("   [FAIL] Timer comparator not updated: got 0x%08h", 
                              u_soc_top.u_timer.reg_mtimecmp[31:0]);
@@ -345,6 +490,56 @@ module tb_soc_veer_cpu;
         pass_count++;
 
         // ---------------------------------------------------------------------
+        // Check 6 (TC_BOOT_01 / TC_BOOT_02): Boot Marker, Nested DCCM & Exceptions
+        // ---------------------------------------------------------------------
+        if (boot_marker_seen) begin
+            $display("   [PASS] TC_BOOT_01 Initial boot marker 0x0000_0001 observed on gpio_o[31:0]");
+            pass_count++;
+        end else begin
+            $display("   [FAIL] TC_BOOT_01 Initial boot marker 0x0000_0001 not observed");
+            fail_count++;
+        end
+
+        if (gpio_o[63:32] === 32'hB007_0002 && dccm_wr_cnt > 0 && dccm_rd_cnt > 0) begin
+            $display("   [PASS] TC_BOOT_02 Nested subroutines & 32-bit DCCM boundary walk passed: gpio_o[63:32] = 0x%08h (wr=%0d, rd=%0d)",
+                     gpio_o[63:32], dccm_wr_cnt, dccm_rd_cnt);
+            pass_count++;
+        end else begin
+            $display("   [FAIL] TC_BOOT_02 DCCM/Stack check failed: gpio_o[63:32] = 0x%08h (wr=%0d, rd=%0d)",
+                     gpio_o[63:32], dccm_wr_cnt, dccm_rd_cnt);
+            fail_count++;
+        end
+
+        if (!exc_seen) begin
+            $display("   [PASS] TC_BOOT_02 Zero CPU/bus/ECC fault exceptions observed");
+            pass_count++;
+        end else begin
+            $display("   [FAIL] TC_BOOT_02 Core exception was asserted during execution");
+            fail_count++;
+        end
+
+        // Verify VeeR PMU/FW halt indication (cpu_halt_status asserted by MPMC[0]=1)
+        fork
+            begin : halt_timeout
+                repeat (500) @(posedge clk);
+                $display("   [FAIL] TC_BOOT_01 CPU Halt Status remained %b (expected 1 after MPMC halt)", cpu_halt_status);
+                fail_count++;
+            end
+            begin : halt_check
+                wait (cpu_halt_status === 1'b1);
+                repeat (10) @(posedge clk);
+                if (cpu_halt_status === 1'b1) begin
+                    $display("   [PASS] TC_BOOT_01 CPU Halt Status asserted (cpu_halt_status = %b after MPMC halt)", cpu_halt_status);
+                    pass_count++;
+                end else begin
+                    $display("   [FAIL] TC_BOOT_01 CPU Halt Status deasserted prematurely (%b)", cpu_halt_status);
+                    fail_count++;
+                end
+                disable halt_timeout;
+            end
+        join
+
+        // ---------------------------------------------------------------------
         // Final Summary
         // ---------------------------------------------------------------------
         $display("=============================================================");
@@ -363,10 +558,13 @@ module tb_soc_veer_cpu;
 
     // Safety timeout
     initial begin
-        #50_000;
-        $display("[TIMEOUT] Simulation reached global timeout limit (50 us)");
+        #400_000;
+        $display("[TIMEOUT] Simulation reached global timeout limit (200 us)");
         $finish;
     end
+
+`include "soc_cov_inst.svh"
+    `INST_SOC_COV(u_soc_top, 1'b1, boot_marker_seen, cpu_halt_status)
 
 endmodule
 

@@ -31,6 +31,9 @@
 // LSR bit positions
 // ---------------------------------------------------------------------------
 `define _UART_LSR_DATA_READY_   0   // RX data available in FIFO
+`define _UART_LSR_OE_           1   // Overrun Error
+`define _UART_LSR_PE_           2   // Parity Error
+`define _UART_LSR_FE_           3   // Framing Error
 `define _UART_LSR_THRE_         5   // Transmit Holding Register Empty
 `define _UART_LSR_TEMT_         6   // Transmitter Empty (shift reg & FIFO empty)
 

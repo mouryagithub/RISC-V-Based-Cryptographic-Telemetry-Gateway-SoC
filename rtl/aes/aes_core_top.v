@@ -98,6 +98,8 @@ module aes_core_top #(
     wire [255:0] key_data;
     wire [127:0] iv_data;
     wire [127:0] din_data;
+    wire [15:0]  total_blocks;
+    wire         iv_written;
     wire [127:0] dout_data;
 
     reg          core_busy_r;
@@ -150,6 +152,8 @@ module aes_core_top #(
         .key_data        (key_data),
         .iv_data         (iv_data),
         .din_data        (din_data),
+        .total_blocks    (total_blocks),
+        .iv_written      (iv_written),
 
         // inputs from AES core
         .core_busy       (core_busy_r),
@@ -197,11 +201,16 @@ module aes_core_top #(
     wire         dec_done;
     wire [127:0] dec_text_out;
 
-    // Output mux: select encrypt or decrypt result
-    wire [127:0] raw_text_out = ctrl_decrypt ? dec_text_out : enc_text_out;
+    // Output mux: select encrypt or decrypt result (CTR always uses forward cipher)
+    wire         use_enc_core = !ctrl_decrypt || ctrl_mode_ctr;
+    wire [127:0] raw_text_out = use_enc_core ? enc_text_out : dec_text_out;
+    wire         core_rst_n   = rst_n & ~ctrl_soft_rst;
 
-    // CBC / CTR feedback register
+    // CBC / CTR feedback register + IV pending tracker + held output
     reg  [127:0] feedback_reg;    // holds IV or previous ciphertext for CBC/CTR
+    reg          iv_pending;      // 1 = next block uses iv_data rather than feedback_reg
+    reg  [127:0] dout_hold_r;     // latched output held valid across idle cycles
+    wire [127:0] feedback_eff = iv_pending ? iv_data : feedback_reg;
 
     // =========================================================================
     // Control FSM
@@ -232,6 +241,8 @@ module aes_core_top #(
             core_key_mux     <= 256'b0;
             text_in_mux      <= 128'b0;
             feedback_reg     <= 128'b0;
+            iv_pending       <= 1'b1;
+            dout_hold_r      <= 128'b0;
             core_busy_r      <= 1'b0;
             core_done_r      <= 1'b0;
             core_key_ready_r <= 1'b0;
@@ -248,14 +259,17 @@ module aes_core_top #(
             core_key_ready_r <= 1'b0;
             core_err_r       <= 1'b0;
 
+            if (iv_written)
+                iv_pending <= 1'b1;
+
             case (state)
                 // ----------------------------------------------------------
                 ST_IDLE: begin
                     core_busy_r <= 1'b0;
                     if (ctrl_start) begin
                         core_busy_r   <= 1'b1;
-                        blk_remaining <= (|{16'b0, 1'b0} ? 16'b0 :  // guard
-                                          ({16{1'b1}} & 16'd1));      // single block default
+                        done_blocks   <= 16'b0;
+                        blk_remaining <= (total_blocks == 16'd0) ? 16'd1 : total_blocks;
                         // Load 256-bit key
                         core_key_mux  <= key_data;
                         state         <= ST_KEY_LOAD1;
@@ -266,7 +280,7 @@ module aes_core_top #(
                 // Key load stage 1 – feed 256-bit key
                 ST_KEY_LOAD1: begin
                     core_key_mux <= key_data;
-                    if (!ctrl_decrypt) begin
+                    if (use_enc_core) begin
                         enc_ld <= 1'b1;   // cipher core uses ld for both key+data
                         // For encrypt-only key schedule, drive dummy text_in=0
                         text_in_mux <= 128'b0;
@@ -279,19 +293,19 @@ module aes_core_top #(
                 // ----------------------------------------------------------
                 // Wait for key load to finish
                 ST_KEY_WAIT1: begin
-                    if (!ctrl_decrypt && enc_done) begin
+                    if (use_enc_core && enc_done) begin
                         core_key_ready_r <= 1'b1;
                         state            <= ST_DATA_LOAD;
-                    end else if (ctrl_decrypt && dec_kdone) begin
+                    end else if (!use_enc_core && dec_kdone) begin
                         core_key_ready_r <= 1'b1;
                         state            <= ST_DATA_LOAD;
                     end
                 end
 
                 // ----------------------------------------------------------
-                // Key load stage 2 – feed upper 128 bits (AES-192/256)
+                // Key load stage 2 – unused for parallel 256-bit core
                 ST_KEY_LOAD2: begin
-                    if (!ctrl_decrypt) begin
+                    if (use_enc_core) begin
                         enc_ld      <= 1'b1;
                         text_in_mux <= 128'b0;
                     end else begin
@@ -303,10 +317,10 @@ module aes_core_top #(
                 // ----------------------------------------------------------
                 // Wait for second key half
                 ST_KEY_WAIT2: begin
-                    if (!ctrl_decrypt && enc_done) begin
+                    if (use_enc_core && enc_done) begin
                         core_key_ready_r <= 1'b1;
                         state            <= ST_DATA_LOAD;
-                    end else if (ctrl_decrypt && dec_kdone) begin
+                    end else if (!use_enc_core && dec_kdone) begin
                         core_key_ready_r <= 1'b1;
                         state            <= ST_DATA_LOAD;
                     end
@@ -315,24 +329,20 @@ module aes_core_top #(
                 // ----------------------------------------------------------
                 // Present data block to core
                 ST_DATA_LOAD: begin
-                    // CBC encrypt: XOR plaintext with IV / previous ciphertext
-                    // CBC decrypt: pass ciphertext directly (XOR after)
-                    // CTR: XOR keystream (enc_text_out) with plaintext
-                    // ECB: pass plaintext directly
-                    if (!ctrl_decrypt) begin
-                        // Encrypt path
+                    if (use_enc_core) begin
+                        // Forward cipher path (ECB/CBC encrypt, and CTR enc/dec)
                         if (ctrl_mode_cbc)
-                            plain_in    <= din_data ^ feedback_reg;
+                            plain_in    <= din_data ^ feedback_eff;
                         else if (ctrl_mode_ctr)
-                            plain_in    <= feedback_reg; // counter block
+                            plain_in    <= feedback_eff; // counter block
                         else
                             plain_in    <= din_data;     // ECB
-                        text_in_mux <= (ctrl_mode_cbc) ? (din_data ^ feedback_reg) :
-                                       (ctrl_mode_ctr) ? feedback_reg               :
+                        text_in_mux <= (ctrl_mode_cbc) ? (din_data ^ feedback_eff) :
+                                       (ctrl_mode_ctr) ? feedback_eff              :
                                                          din_data;
                         enc_ld      <= 1'b1;
                     end else begin
-                        // Decrypt path
+                        // Decrypt path (ECB/CBC decrypt)
                         text_in_mux <= din_data;
                         dec_ld      <= 1'b1;
                     end
@@ -344,29 +354,41 @@ module aes_core_top #(
                 // ----------------------------------------------------------
                 // Wait for data block to complete
                 ST_DATA_WAIT: begin
-                    if ((!ctrl_decrypt && enc_done) ||
-                        ( ctrl_decrypt && dec_done)) begin
+                    if ((use_enc_core && enc_done) ||
+                        (!use_enc_core && dec_done)) begin
 
-                        // CTR: XOR keystream with plaintext to produce ciphertext/plaintext
-                        // CBC decrypt: XOR decrypted block with feedback
-                        // Others: result is raw_text_out
+                        // Latch output atomically BEFORE feedback_reg updates
+                        if (ctrl_mode_ctr)
+                            dout_hold_r <= din_data ^ raw_text_out;
+                        else if (ctrl_mode_cbc && ctrl_decrypt)
+                            dout_hold_r <= raw_text_out ^ feedback_eff;
+                        else
+                            dout_hold_r <= raw_text_out;
+
+                        iv_pending <= 1'b0;
 
                         // Update CBC/CTR feedback register
                         if (!ctrl_decrypt && ctrl_mode_cbc)
-                            feedback_reg <= raw_text_out;       // CBC-E: next IV = ciphertext
+                            feedback_reg <= raw_text_out;           // CBC-E: next IV = ciphertext
                         else if (ctrl_decrypt && ctrl_mode_cbc)
-                            feedback_reg <= din_data;            // CBC-D: next IV = ciphertext in
+                            feedback_reg <= din_data;               // CBC-D: next IV = ciphertext in
                         else if (ctrl_mode_ctr)
-                            feedback_reg <= feedback_reg + 128'b1; // CTR: increment counter
+                            feedback_reg <= feedback_eff + 128'b1;  // CTR: increment counter
 
-                        state <= ST_DONE;
+                        done_blocks <= done_blocks + 16'b1;
+
+                        if (blk_remaining > 16'd1) begin
+                            blk_remaining <= blk_remaining - 16'd1;
+                            state         <= ST_DATA_LOAD;
+                        end else begin
+                            state         <= ST_DONE;
+                        end
                     end
                 end
 
                 // ----------------------------------------------------------
                 ST_DONE: begin
                     core_done_r  <= 1'b1;
-                    done_blocks  <= done_blocks + 16'b1;
                     core_busy_r  <= 1'b0;
                     state        <= ST_IDLE;
                 end
@@ -376,26 +398,8 @@ module aes_core_top #(
         end
     end
 
-    // =========================================================================
-    // DOUT mux: apply CTR/CBC-Decrypt XOR at output
-    // =========================================================================
-    reg [127:0] dout_internal;
-
-    always @(*) begin
-        if (ctrl_mode_ctr && !ctrl_decrypt)
-            // CTR encrypt: plaintext XOR keystream
-            dout_internal = din_data ^ raw_text_out;
-        else if (ctrl_mode_ctr && ctrl_decrypt)
-            // CTR decrypt = same operation as encrypt
-            dout_internal = din_data ^ raw_text_out;
-        else if (ctrl_mode_cbc && ctrl_decrypt)
-            // CBC decrypt: XOR with previous ciphertext (feedback held from before DATA_LOAD)
-            dout_internal = raw_text_out ^ feedback_reg;
-        else
-            dout_internal = raw_text_out;
-    end
-
-    assign dout_data = dout_internal;
+    // Held output driven to regfile
+    assign dout_data = dout_hold_r;
 
     // =========================================================================
     // AES Cipher Core (Encrypt)
@@ -404,7 +408,7 @@ module aes_core_top #(
     // =========================================================================
     aes_cipher_top u_cipher (
         .clk      (aclk),
-        .rst      (rst_n),         // active-LOW
+        .rst      (core_rst_n),    // active-LOW
         .ld       (enc_ld),
         .done     (enc_done),
         .key      (core_key_mux),
@@ -420,7 +424,7 @@ module aes_core_top #(
     // =========================================================================
     aes_inv_cipher_top u_inv_cipher (
         .clk      (aclk),
-        .rst      (rst_n),         // active-LOW
+        .rst      (core_rst_n),    // active-LOW
         .kld      (dec_kld),
         .kdone    (dec_kdone),
         .ld       (dec_ld),

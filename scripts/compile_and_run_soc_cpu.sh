@@ -103,8 +103,9 @@ vcs -full64 -sverilog +v2k -timescale=1ns/1ps \
     rtl/interconnect/priority_encoder.v \
     rtl/interconnect/arbiter.v \
     rtl/interconnect/axi_interconnect.v \
-    rtl/interconnect/axi_interconnect_wrap_2x5.v \
+    rtl/interconnect/axi_interconnect_wrap_2x6.v \
     rtl/interconnect/axi_to_axilite_bridge.v \
+    rtl/mem/axi_sram.v \
     rtl/dma/inc/amba_axi_pkg.sv \
     rtl/dma/inc/dma_utils_pkg.sv \
     rtl/dma/rggen_mux.v \
@@ -148,6 +149,8 @@ vcs -full64 -sverilog +v2k -timescale=1ns/1ps \
     rtl/sha/sha256.v \
     rtl/sha/axi_sha256_top.v \
     rtl/soc_top.v \
+    tb/soc_cov_pkg.sv \
+    tb/soc_cov_collector.sv \
     tb/tb_soc_veer_cpu.sv \
     -o run/simv_soc_cpu
 

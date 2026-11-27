@@ -56,6 +56,26 @@ module dma_axi_wrapper
     end : connecting_structs_with_csr
   end
 
+  logic [1:0]  csr_bresp_w;
+  logic [1:0]  csr_rresp_w;
+  logic [63:0] csr_rdata_w;
+
+  always_comb begin
+    case (csr_bresp_w)
+      2'b00:   dma_csr_miso_o.bresp = AXI_OKAY;
+      2'b01:   dma_csr_miso_o.bresp = AXI_EXOKAY;
+      2'b10:   dma_csr_miso_o.bresp = AXI_SLVERR;
+      default: dma_csr_miso_o.bresp = AXI_DECERR;
+    endcase
+    case (csr_rresp_w)
+      2'b00:   dma_csr_miso_o.rresp = AXI_OKAY;
+      2'b01:   dma_csr_miso_o.rresp = AXI_EXOKAY;
+      2'b10:   dma_csr_miso_o.rresp = AXI_SLVERR;
+      default: dma_csr_miso_o.rresp = AXI_DECERR;
+    endcase
+  end
+  assign dma_csr_miso_o.rdata = csr_rdata_w[`AXI_DATA_WIDTH-1:0];
+
   /* verilator lint_off WIDTH */
   csr_dma #(
     .ID_WIDTH                       (`AXI_TXN_ID_WIDTH)
@@ -65,34 +85,34 @@ module dma_axi_wrapper
     .i_awvalid                      (dma_csr_mosi_i.awvalid),
     .o_awready                      (dma_csr_miso_o.awready),
     .i_awid                         (dma_csr_mosi_i.awid),
-    .i_awaddr                       (dma_csr_mosi_i.awaddr),
-    .i_awprot                       (dma_csr_mosi_i.awprot),
+    .i_awaddr                       (dma_csr_mosi_i.awaddr[7:0]),
+    .i_awprot                       (3'(dma_csr_mosi_i.awprot)),
     .i_wvalid                       (dma_csr_mosi_i.wvalid),
     .o_wready                       (dma_csr_miso_o.wready),
-    .i_wdata                        (dma_csr_mosi_i.wdata),
-    .i_wstrb                        (dma_csr_mosi_i.wstrb),
+    .i_wdata                        ({{(64-`AXI_DATA_WIDTH){1'b0}}, dma_csr_mosi_i.wdata}),
+    .i_wstrb                        ({{(8-(`AXI_DATA_WIDTH/8)){1'b0}}, dma_csr_mosi_i.wstrb}),
     .o_bvalid                       (dma_csr_miso_o.bvalid),
     .i_bready                       (dma_csr_mosi_i.bready),
     .o_bid                          (dma_csr_miso_o.bid),
-    .o_bresp                        (dma_csr_miso_o.bresp),
+    .o_bresp                        (csr_bresp_w),
     .i_arvalid                      (dma_csr_mosi_i.arvalid),
     .o_arready                      (dma_csr_miso_o.arready),
     .i_arid                         (dma_csr_mosi_i.arid),
-    .i_araddr                       (dma_csr_mosi_i.araddr),
-    .i_arprot                       (dma_csr_mosi_i.arprot),
+    .i_araddr                       (dma_csr_mosi_i.araddr[7:0]),
+    .i_arprot                       (3'(dma_csr_mosi_i.arprot)),
     .o_rvalid                       (dma_csr_miso_o.rvalid),
     .i_rready                       (dma_csr_mosi_i.rready),
     .o_rid                          (dma_csr_miso_o.rid),
-    .o_rdata                        (dma_csr_miso_o.rdata),
-    .o_rresp                        (dma_csr_miso_o.rresp),
+    .o_rdata                        (csr_rdata_w),
+    .o_rresp                        (csr_rresp_w),
     .o_dma_control_go               (dma_ctrl.go),
     .o_dma_control_max_burst        (dma_ctrl.max_burst),
     .o_dma_control_abort            (dma_ctrl.abort_req),
     .i_dma_status_done              (dma_stats.done),
     .i_dma_error_stats_error_trig   (dma_stats.error),
     .i_dma_error_addr_error_addr    (dma_error.addr),
-    .i_dma_error_stats_error_type   (dma_error.type_err),
-    .i_dma_error_stats_error_src    (dma_error.src),
+    .i_dma_error_stats_error_type   (1'(dma_error.type_err)),
+    .i_dma_error_stats_error_src    (1'(dma_error.src)),
     .o_dma_desc_src_addr_src_addr   (dma_desc_src_vec),
     .o_dma_desc_dst_addr_dst_addr   (dma_desc_dst_vec),
     .o_dma_desc_num_bytes_num_bytes (dma_desc_byt_vec),

@@ -262,7 +262,10 @@ module dma_axi_if
       dma_mosi_o.arprot = AXI_NONSECURE;
       dma_mosi_o.arid   = axi_tid_t'(DMA_ID_VAL);
 
-      dma_mosi_o.arvalid = (rd_counter_ff < `DMA_RD_TXN_BUFF) ? dma_axi_rd_req_i.valid : 1'b0;
+      dma_mosi_o.arvalid = ((rd_counter_ff == 'd0) &&
+                            ({{(32-$bits(dma_fifo_resp_i.space)){1'b0}}, dma_fifo_resp_i.space} >
+                             {{(32-$bits(dma_axi_rd_req_i.alen)){1'b0}}, dma_axi_rd_req_i.alen})) ?
+                           dma_axi_rd_req_i.valid : 1'b0;
       if (dma_mosi_o.arvalid) begin
         dma_axi_rd_resp_o.ready = dma_miso_i.arready;
         dma_mosi_o.araddr  = dma_axi_rd_req_i.addr;

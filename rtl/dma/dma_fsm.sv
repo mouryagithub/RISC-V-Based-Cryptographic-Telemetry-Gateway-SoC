@@ -84,7 +84,9 @@ module dma_fsm
 
   /* verilator lint_off WIDTH */
   always_comb begin : rd_streamer
-    dma_stream_rd_o   = s_dma_str_in_t'('0);
+    s_dma_str_in_t rd_str_next;
+
+    rd_str_next       = s_dma_str_in_t'('0);
     next_rd_desc_done = rd_desc_done_ff;
     pending_rd_desc   = 1'b0;
     dma_active_o      = (cur_st_ff == DMA_ST_RUN);
@@ -92,48 +94,54 @@ module dma_fsm
     if (cur_st_ff == DMA_ST_RUN) begin
       for (int i=0; i<`DMA_NUM_DESC; i++) begin
         if (dma_desc_i[i].enable && (|dma_desc_i[i].num_bytes) && (~rd_desc_done_ff[i])) begin
-          dma_stream_rd_o.idx   = i;
-          dma_stream_rd_o.valid = ~abort_ff;
+          rd_str_next.idx   = idx_desc_t'(i);
+          rd_str_next.valid = ~abort_ff;
           break;
         end
       end
 
       if (dma_stream_rd_i.done) begin
-        next_rd_desc_done[dma_stream_rd_o.idx] = 1'b1;
+        next_rd_desc_done[rd_str_next.idx] = 1'b1;
       end
 
-      pending_rd_desc = dma_stream_rd_o.valid;
+      pending_rd_desc = rd_str_next.valid;
     end
 
     if (cur_st_ff == DMA_ST_DONE) begin
       next_rd_desc_done = '0;
     end
+
+    dma_stream_rd_o = rd_str_next;
   end : rd_streamer
 
   always_comb begin : wr_streamer
-    dma_stream_wr_o   = s_dma_str_in_t'('0);
+    s_dma_str_in_t wr_str_next;
+
+    wr_str_next       = s_dma_str_in_t'('0);
     next_wr_desc_done = wr_desc_done_ff;
     pending_wr_desc   = 1'b0;
 
     if (cur_st_ff == DMA_ST_RUN) begin
       for (int i=0; i<`DMA_NUM_DESC; i++) begin
         if (dma_desc_i[i].enable && (|dma_desc_i[i].num_bytes) && (~wr_desc_done_ff[i])) begin
-          dma_stream_wr_o.idx   = i;
-          dma_stream_wr_o.valid = ~abort_ff;
+          wr_str_next.idx   = idx_desc_t'(i);
+          wr_str_next.valid = ~abort_ff;
           break;
         end
       end
 
       if (dma_stream_wr_i.done) begin
-        next_wr_desc_done[dma_stream_wr_o.idx] = 1'b1;
+        next_wr_desc_done[wr_str_next.idx] = 1'b1;
       end
 
-      pending_wr_desc = dma_stream_wr_o.valid;
+      pending_wr_desc = wr_str_next.valid;
     end
 
     if (cur_st_ff == DMA_ST_DONE) begin
       next_wr_desc_done = '0;
     end
+
+    dma_stream_wr_o = wr_str_next;
   end : wr_streamer
   /* verilator lint_on WIDTH */
 

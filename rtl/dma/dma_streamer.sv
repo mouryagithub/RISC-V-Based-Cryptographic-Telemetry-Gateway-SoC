@@ -148,7 +148,7 @@ module dma_streamer
       // CSRs and the burst mode
       fut_addr = addr+(i*bytes_p_burst);
       txn_sz = (i*bytes_p_burst);
-      if ((bytes >= txn_sz) && ((`DMA_MAX_BURST_EN == 1) ? ((i-'d1) <= dma_maxb_i) : 1'b1) && ((`DMA_MAX_BEAT_BURST > 16) ? valid_burst(dma_mode_ff, i[8:0]) : 1'b1)) begin
+      if ((bytes >= txn_sz) && ((`DMA_MAX_BURST_EN == 1) ? ((i-'d1) <= dma_maxb_i) : 1'b1) && (i <= `DMA_FIFO_DEPTH) && ((`DMA_MAX_BEAT_BURST > 16) ? valid_burst(dma_mode_ff, i[8:0]) : 1'b1)) begin
         // Check if we respect the 4KB boundary per burst
         if (burst_r4KB(addr, fut_addr)) begin
           alen = axi_alen_t'(i-1);
@@ -188,8 +188,9 @@ module dma_streamer
     endcase
   end : streamer_dma_ctrl
 
+  assign dma_stream_o.done = ((cur_st_ff == DMA_ST_SM_RUN) && (next_st == DMA_ST_SM_IDLE));
+
   always_comb begin : burst_calc
-    dma_stream_o      = s_dma_str_out_t'('0);
     next_dma_mode     = dma_mode_ff;
     next_dma_req      = dma_req_ff;
     next_desc_addr    = desc_addr_ff;
@@ -286,8 +287,6 @@ module dma_streamer
         end
       end
     end
-
-    dma_stream_o.done = ((cur_st_ff == DMA_ST_SM_RUN) && (next_st == DMA_ST_SM_IDLE));
   end : burst_calc
 
   always_ff @ (posedge clk) begin

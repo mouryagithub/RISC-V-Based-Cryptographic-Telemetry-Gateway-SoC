@@ -5,6 +5,7 @@
 +incdir+gpio_vip_uvm_tb
 +incdir+uart_vip_uvm_tb
 +incdir+../c_test
++incdir+.
 
 -CFLAGS -I../c_test
 ../c_test/soc_test.c
@@ -12,8 +13,9 @@
 ../rtl/interconnect/priority_encoder.v
 ../rtl/interconnect/arbiter.v
 ../rtl/interconnect/axi_interconnect.v
-../rtl/interconnect/axi_interconnect_wrap_2x5.v
+../rtl/interconnect/axi_interconnect_wrap_2x6.v
 ../rtl/interconnect/axi_to_axilite_bridge.v
+../rtl/mem/axi_sram.v
 ../rtl/dma/inc/amba_axi_pkg.sv
 ../rtl/dma/inc/dma_utils_pkg.sv
 ../rtl/dma/rggen_mux.v
@@ -64,4 +66,6 @@ gpio_vip_uvm_tb/gpio_vip_pkg.sv
 uart_vip_uvm_tb/uart_vip_if.sv
 uart_vip_uvm_tb/uart_vip_pkg.sv
 
+soc_cov_pkg.sv
+soc_cov_collector.sv
 tb_top.sv

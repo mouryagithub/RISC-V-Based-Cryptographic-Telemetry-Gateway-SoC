@@ -48,3 +48,16 @@ verdi.cmd.bak
 
 # LibreOffice lock files
 .~lock.*#
+
+# Vivado Simulator / XSim / Coverage artifacts
+xsim.dir/
+xsim.covdb/
+xsim.codeCov/
+xsim.codeCov.elab/
+*.pb
+*.jou
+*.wdb
+*.str
+run/coverage/
+run/vivado_*/
+

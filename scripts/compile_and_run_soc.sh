@@ -28,8 +28,9 @@ vcs -full64 -sverilog +v2k \
     rtl/interconnect/priority_encoder.v \
     rtl/interconnect/arbiter.v \
     rtl/interconnect/axi_interconnect.v \
-    rtl/interconnect/axi_interconnect_wrap_2x5.v \
+    rtl/interconnect/axi_interconnect_wrap_2x6.v \
     rtl/interconnect/axi_to_axilite_bridge.v \
+    rtl/mem/axi_sram.v \
     rtl/dma/inc/amba_axi_pkg.sv \
     rtl/dma/inc/dma_utils_pkg.sv \
     rtl/dma/rggen_mux.v \

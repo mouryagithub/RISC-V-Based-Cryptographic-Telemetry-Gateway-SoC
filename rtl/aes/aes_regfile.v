@@ -104,6 +104,8 @@ module aes_regfile #(
     output reg  [255:0]          key_data,         // KEY7..KEY0 concatenated
     output reg  [127:0]          iv_data,          // IV3..IV0 concatenated
     output reg  [127:0]          din_data,         // DIN3..DIN0 concatenated
+    output reg  [15:0]           total_blocks,     // AES_BLK_CNT TOTAL_BLOCKS[15:0]
+    output reg                   iv_written,       // 1-cycle pulse on IV0..3 write
 
     // -------------------------------------------------------------------------
     // Register inputs from AES core
@@ -138,8 +140,7 @@ module aes_regfile #(
     reg  status_key_ready;
     reg  status_err;
 
-    // AES_BLK_CNT (0x08)
-    reg  [15:0] total_blocks;
+    // AES_BLK_CNT (0x08) – total_blocks[15:0] declared in output ports above
 
     // KEY registers (write-only; stored internally, exposed as output)
     // key_data[255:0] declared in outputs
@@ -222,25 +223,48 @@ module aes_regfile #(
     end
 
     // Write dispatch + B response
+    // -------------------------------------------------------------------------
+    // AXI4-Lite write state machine + hardware status updates
+    // -------------------------------------------------------------------------
     always @(posedge aclk) begin
         if (rst) begin
-            s_axi_bvalid   <= 1'b0;
-            s_axi_bresp    <= 2'b00;
-            ctrl_start     <= 1'b0;
-            ctrl_irq_en    <= 1'b0;
-            ctrl_decrypt   <= 1'b0;
-            ctrl_key_size  <= 2'b10;   // default = 256-bit
-            ctrl_mode_cbc  <= 1'b0;
-            ctrl_mode_ctr  <= 1'b0;
-            ctrl_soft_rst  <= 1'b0;
-            total_blocks   <= 16'h0000;
-            key_data       <= 256'b0;
-            iv_data        <= 128'b0;
-            din_data       <= 128'b0;
+            s_axi_bvalid     <= 1'b0;
+            s_axi_bresp      <= 2'b00;
+            ctrl_start       <= 1'b0;
+            ctrl_irq_en      <= 1'b0;
+            ctrl_decrypt     <= 1'b0;
+            ctrl_key_size    <= 2'b10;   // default = 256-bit
+            ctrl_mode_cbc    <= 1'b0;
+            ctrl_mode_ctr    <= 1'b0;
+            ctrl_soft_rst    <= 1'b0;
+            total_blocks     <= 16'h0001;
+            key_data         <= 256'b0;
+            iv_data          <= 128'b0;
+            din_data         <= 128'b0;
+            iv_written       <= 1'b0;
+            status_done      <= 1'b0;
+            status_key_ready <= 1'b0;
+            status_err       <= 1'b0;
         end else begin
             // Self-clearing pulses
             ctrl_start    <= 1'b0;
             ctrl_soft_rst <= 1'b0;
+            iv_written    <= 1'b0;
+
+            if (ctrl_soft_rst) begin
+                ctrl_irq_en      <= 1'b0;
+                ctrl_decrypt     <= 1'b0;
+                ctrl_key_size    <= 2'b10;
+                ctrl_mode_cbc    <= 1'b0;
+                ctrl_mode_ctr    <= 1'b0;
+                total_blocks     <= 16'h0001;
+                key_data         <= 256'b0;
+                iv_data          <= 128'b0;
+                din_data         <= 128'b0;
+                status_done      <= 1'b0;
+                status_key_ready <= 1'b0;
+                status_err       <= 1'b0;
+            end
 
             // Dispatch write when both AW and W have been captured
             if (wr_addr_valid && wr_data_valid) begin
@@ -288,39 +312,28 @@ module aes_regfile #(
                     6'h0A: key_data[223:192] <= apply_strb(key_data[223:192], wr_data, wr_strb);
                     6'h0B: key_data[255:224] <= apply_strb(key_data[255:224], wr_data, wr_strb);
                     // IV registers   0x30–0x3C  (R/W)
-                    6'h0C: iv_data[31:0]     <= apply_strb(iv_data[31:0],     wr_data, wr_strb);
-                    6'h0D: iv_data[63:32]    <= apply_strb(iv_data[63:32],    wr_data, wr_strb);
-                    6'h0E: iv_data[95:64]    <= apply_strb(iv_data[95:64],    wr_data, wr_strb);
-                    6'h0F: iv_data[127:96]   <= apply_strb(iv_data[127:96],   wr_data, wr_strb);
+                    6'h0C: begin iv_data[31:0]   <= apply_strb(iv_data[31:0],   wr_data, wr_strb); if (|wr_strb) iv_written <= 1'b1; end
+                    6'h0D: begin iv_data[63:32]  <= apply_strb(iv_data[63:32],  wr_data, wr_strb); if (|wr_strb) iv_written <= 1'b1; end
+                    6'h0E: begin iv_data[95:64]  <= apply_strb(iv_data[95:64],  wr_data, wr_strb); if (|wr_strb) iv_written <= 1'b1; end
+                    6'h0F: begin iv_data[127:96] <= apply_strb(iv_data[127:96], wr_data, wr_strb); if (|wr_strb) iv_written <= 1'b1; end
                     // DIN registers  0x40–0x4C  (WO)
                     6'h10: din_data[31:0]    <= apply_strb(din_data[31:0],    wr_data, wr_strb);
                     6'h11: din_data[63:32]   <= apply_strb(din_data[63:32],   wr_data, wr_strb);
                     6'h12: din_data[95:64]   <= apply_strb(din_data[95:64],   wr_data, wr_strb);
                     6'h13: din_data[127:96]  <= apply_strb(din_data[127:96],  wr_data, wr_strb);
-                    // DOUT 0x50–0x5C is RO: writes ignored (SLVERR not raised,
-                    // hardware may optionally return SLVERR by changing bresp)
+                    // DOUT 0x50–0x5C is RO: writes ignored
                     default: s_axi_bresp <= 2'b00; // silently ignore unknown addr
                 endcase
             end
 
-            // B handshake clear
-            if (s_axi_bvalid && s_axi_bready)
-                s_axi_bvalid <= 1'b0;
-        end
-    end
-
-    // -------------------------------------------------------------------------
-    // Hardware status updates from core
-    // -------------------------------------------------------------------------
-    always @(posedge aclk) begin
-        if (rst) begin
-            status_done      <= 1'b0;
-            status_key_ready <= 1'b0;
-            status_err       <= 1'b0;
-        end else begin
+            // Hardware status latches take priority over W1C if simultaneous
             if (core_done)      status_done      <= 1'b1;
             if (core_key_ready) status_key_ready <= 1'b1;
             if (core_err)       status_err       <= 1'b1;
+
+            // B handshake clear
+            if (s_axi_bvalid && s_axi_bready)
+                s_axi_bvalid <= 1'b0;
         end
     end
 

@@ -43,16 +43,21 @@ module uart_controller
     output  wire                  uart_tx_o,                  // the bit to send
     output  wire [DATA_UART-1:0]  rx_data_o,                  // the data packet received
     output  wire                  rx_push_o,                  // push data to the receive FIFO
+    output  wire                  rx_parity_err_o,            // parity error aligned with rx_push_o
+    output  wire                  rx_framing_err_o,           // framing error aligned with rx_push_o
     input   wire                  tx_load_i,                  // available data to load from transmit FIFO
     //input   wire                  tx_full_i,                  // transmit FIFO is full
     input   wire [DATA_UART-1:0]  tx_data_i,                  // the data packet to transmit
-    output  wire                  tx_pull_o                   // pull fro the transmit FIFO
+    output  wire                  tx_pull_o,                  // pull fro the transmit FIFO
+    output  wire                  tx_busy_o                   // transmitter shift register active
 );
 
   /* regs and wires */
   wire                  uart_tx_int;
   wire  [DATA_UART-1:0] rx_data_int;
   wire                  rx_push_int;
+  wire                  rx_parity_err_int;
+  wire                  rx_framing_err_int;
   reg                   tx_pull_int, tx_pull_int_d;
   reg   [DATA_UART-1:0] tx_data_int, tx_data_int_d;
   reg                   tx_send_int, tx_send_int_d;
@@ -132,15 +137,18 @@ module uart_controller
         .DIV_SIZE   (DIV_SIZE)
       )
     uart_receiver_inst (
-        .clk_i        (clk_i),
-        .rstn_i       (rstn_i),
-        .en_i         (uart_en_i),
-        .stop_bits_i  (uart_stop_bits_i),
-        .parity_bit_i (uart_parity_bit_i),
-        .baud_div_i   (uart_baudrate_div_i),
-        .rx_i         (uart_rx_i),
-        .rx_data_o    (rx_data_int),
-        .rx_valid_o   (rx_push_int)
+        .clk_i            (clk_i),
+        .rstn_i           (rstn_i),
+        .en_i             (uart_en_i),
+        .stop_bits_i      (uart_stop_bits_i),
+        .parity_bit_i     (uart_parity_bit_i),
+        .parity_mode_i    (uart_parity_bit_mode_i),
+        .baud_div_i       (uart_baudrate_div_i),
+        .rx_i             (uart_rx_i),
+        .rx_data_o        (rx_data_int),
+        .rx_valid_o       (rx_push_int),
+        .rx_parity_err_o  (rx_parity_err_int),
+        .rx_framing_err_o (rx_framing_err_int)
       );
 
   /* uart transmitter */
@@ -165,10 +173,13 @@ module uart_controller
       );
 
   /* output assignments */
-  assign uart_tx_o = uart_tx_int;
-  assign rx_data_o = rx_data_int;
-  assign rx_push_o = rx_push_int;
-  assign tx_pull_o = tx_pull_int;
+  assign uart_tx_o        = uart_tx_int;
+  assign rx_data_o        = rx_data_int;
+  assign rx_push_o        = rx_push_int;
+  assign rx_parity_err_o  = rx_parity_err_int;
+  assign rx_framing_err_o = rx_framing_err_int;
+  assign tx_pull_o        = tx_pull_int;
+  assign tx_busy_o        = tx_busy;
 
 endmodule
 

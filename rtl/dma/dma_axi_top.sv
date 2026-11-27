@@ -103,7 +103,7 @@ module dma_axi_top
   always_comb begin
     dma_s_mosi.awid    = '0;
     dma_s_mosi.awaddr  = dma_s_awaddr;
-    dma_s_mosi.awprot  = dma_s_awprot;
+    dma_s_mosi.awprot  = axi_prot_t'(dma_s_awprot);
     dma_s_mosi.awvalid = dma_s_awvalid;
     dma_s_mosi.wdata   = dma_s_wdata;
     dma_s_mosi.wstrb   = dma_s_wstrb;
@@ -111,20 +111,20 @@ module dma_axi_top
     dma_s_mosi.bready  = dma_s_bready;
     dma_s_mosi.arid    = '0;
     dma_s_mosi.araddr  = dma_s_araddr;
-    dma_s_mosi.arprot  = dma_s_arprot;
+    dma_s_mosi.arprot  = axi_prot_t'(dma_s_arprot);
     dma_s_mosi.arvalid = dma_s_arvalid;
     dma_s_mosi.rready  = dma_s_rready;
 
     dma_m_miso.awready = dma_m_awready;
     dma_m_miso.wready  = dma_m_wready;
     dma_m_miso.bid     = dma_m_bid;
-    dma_m_miso.bresp   = dma_m_bresp;
+    dma_m_miso.bresp   = axi_resp_t'(dma_m_bresp);
     dma_m_miso.buser   = '0;
     dma_m_miso.bvalid  = dma_m_bvalid;
     dma_m_miso.arready = dma_m_arready;
     dma_m_miso.rid     = dma_m_rid;
     dma_m_miso.rdata   = dma_m_rdata;
-    dma_m_miso.rresp   = dma_m_rresp;
+    dma_m_miso.rresp   = axi_resp_t'(dma_m_rresp);
     dma_m_miso.rlast   = dma_m_rlast;
     dma_m_miso.ruser   = '0;
     dma_m_miso.rvalid  = dma_m_rvalid;

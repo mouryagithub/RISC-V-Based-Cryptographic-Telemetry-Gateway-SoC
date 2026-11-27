@@ -678,10 +678,32 @@ module soc_top #(
     wire [1:0]                m04_rresp;   wire                      m04_rlast;
     wire                      m04_rvalid;  wire                      m04_rready;
 
+    // m05 (System SRAM 64KB @ 0x0000_0000)
+    wire [AXI_ID_WIDTH-1:0]   m05_awid;    wire [AXI_ADDR_WIDTH-1:0] m05_awaddr;
+    wire [7:0]                m05_awlen;   wire [2:0]                m05_awsize;
+    wire [1:0]                m05_awburst; wire                      m05_awlock;
+    wire [3:0]                m05_awcache; wire [2:0]                m05_awprot;
+    wire [3:0]                m05_awqos;   wire [3:0]                m05_awregion;
+    wire                      m05_awvalid; wire                      m05_awready;
+    wire [AXI_DATA_WIDTH-1:0] m05_wdata;   wire [AXI_DATA_WIDTH/8-1:0] m05_wstrb;
+    wire                      m05_wlast;   wire                      m05_wvalid;
+    wire                      m05_wready;
+    wire [AXI_ID_WIDTH-1:0]   m05_bid;     wire [1:0]                m05_bresp;
+    wire                      m05_bvalid;  wire                      m05_bready;
+    wire [AXI_ID_WIDTH-1:0]   m05_arid;    wire [AXI_ADDR_WIDTH-1:0] m05_araddr;
+    wire [7:0]                m05_arlen;   wire [2:0]                m05_arsize;
+    wire [1:0]                m05_arburst; wire                      m05_arlock;
+    wire [3:0]                m05_arcache; wire [2:0]                m05_arprot;
+    wire [3:0]                m05_arqos;   wire [3:0]                m05_arregion;
+    wire                      m05_arvalid; wire                      m05_arready;
+    wire [AXI_ID_WIDTH-1:0]   m05_rid;     wire [AXI_DATA_WIDTH-1:0] m05_rdata;
+    wire [1:0]                m05_rresp;   wire                      m05_rlast;
+    wire                      m05_rvalid;  wire                      m05_rready;
+
     // =========================================================================
-    // AXI4 2x5 Crossbar Interconnect Instantiation
+    // AXI4 2x6 Crossbar Interconnect Instantiation
     // =========================================================================
-    axi_interconnect_wrap_2x5 #(
+    axi_interconnect_wrap_2x6 #(
         .DATA_WIDTH         (AXI_DATA_WIDTH),
         .ADDR_WIDTH         (AXI_ADDR_WIDTH),
         .ID_WIDTH           (AXI_ID_WIDTH),
@@ -715,8 +737,14 @@ module soc_top #(
         .M04_BASE_ADDR      (32'h4000_4000),
         .M04_ADDR_WIDTH     ({1{32'd12}}),
         .M04_CONNECT_READ   (2'b11),
-        .M04_CONNECT_WRITE  (2'b11)
-    ) u_interconnect_2x5 (
+        .M04_CONNECT_WRITE  (2'b11),
+
+        // m05: System SRAM (0x0000_0000, 64 KB)
+        .M05_BASE_ADDR      (32'h0000_0000),
+        .M05_ADDR_WIDTH     ({1{32'd16}}),
+        .M05_CONNECT_READ   (2'b11),
+        .M05_CONNECT_WRITE  (2'b11)
+    ) u_interconnect_2x6 (
         .clk                (clk),
         .rst                (rst),
 
@@ -1036,7 +1064,53 @@ module soc_top #(
         .m04_axi_rlast      (m04_rlast),
         .m04_axi_ruser      (1'b0),
         .m04_axi_rvalid     (m04_rvalid),
-        .m04_axi_rready     (m04_rready)
+        .m04_axi_rready     (m04_rready),
+
+        // --- Master Port 5: m05 (System SRAM 64KB) ---
+        .m05_axi_awid       (m05_awid),
+        .m05_axi_awaddr     (m05_awaddr),
+        .m05_axi_awlen      (m05_awlen),
+        .m05_axi_awsize     (m05_awsize),
+        .m05_axi_awburst    (m05_awburst),
+        .m05_axi_awlock     (m05_awlock),
+        .m05_axi_awcache    (m05_awcache),
+        .m05_axi_awprot     (m05_awprot),
+        .m05_axi_awqos      (m05_awqos),
+        .m05_axi_awregion   (m05_awregion),
+        .m05_axi_awuser     (),
+        .m05_axi_awvalid    (m05_awvalid),
+        .m05_axi_awready    (m05_awready),
+        .m05_axi_wdata      (m05_wdata),
+        .m05_axi_wstrb      (m05_wstrb),
+        .m05_axi_wlast      (m05_wlast),
+        .m05_axi_wuser      (),
+        .m05_axi_wvalid     (m05_wvalid),
+        .m05_axi_wready     (m05_wready),
+        .m05_axi_bid        (m05_bid),
+        .m05_axi_bresp      (m05_bresp),
+        .m05_axi_buser      (1'b0),
+        .m05_axi_bvalid     (m05_bvalid),
+        .m05_axi_bready     (m05_bready),
+        .m05_axi_arid       (m05_arid),
+        .m05_axi_araddr     (m05_araddr),
+        .m05_axi_arlen      (m05_arlen),
+        .m05_axi_arsize     (m05_arsize),
+        .m05_axi_arburst    (m05_arburst),
+        .m05_axi_arlock     (m05_arlock),
+        .m05_axi_arcache    (m05_arcache),
+        .m05_axi_arprot     (m05_arprot),
+        .m05_axi_arqos      (m05_arqos),
+        .m05_axi_arregion   (m05_arregion),
+        .m05_axi_aruser     (),
+        .m05_axi_arvalid    (m05_arvalid),
+        .m05_axi_arready    (m05_arready),
+        .m05_axi_rid        (m05_rid),
+        .m05_axi_rdata      (m05_rdata),
+        .m05_axi_rresp      (m05_rresp),
+        .m05_axi_rlast      (m05_rlast),
+        .m05_axi_ruser      (1'b0),
+        .m05_axi_rvalid     (m05_rvalid),
+        .m05_axi_rready     (m05_rready)
     );
 
     // =========================================================================
@@ -1462,6 +1536,55 @@ module soc_top #(
         .s_axi_rvalid   (sha_rvalid),
         .s_axi_rready   (sha_rready),
         .sha_irq        (sha_irq)
+    );
+
+    // --- Slave 5: On-Chip 64 KB System SRAM (0x0000_0000 - 0x0000_FFFF) ---
+    axi_sram #(
+        .DATA_WIDTH     (AXI_DATA_WIDTH),
+        .ADDR_WIDTH     (16),
+        .ID_WIDTH       (AXI_ID_WIDTH)
+    ) u_sram (
+        .aclk           (clk),
+        .aresetn        (aresetn),
+        .s_axi_awid     (m05_awid),
+        .s_axi_awaddr   (m05_awaddr[15:0]),
+        .s_axi_awlen    (m05_awlen),
+        .s_axi_awsize   (m05_awsize),
+        .s_axi_awburst  (m05_awburst),
+        .s_axi_awlock   (m05_awlock),
+        .s_axi_awcache  (m05_awcache),
+        .s_axi_awprot   (m05_awprot),
+        .s_axi_awqos    (m05_awqos),
+        .s_axi_awregion (m05_awregion),
+        .s_axi_awvalid  (m05_awvalid),
+        .s_axi_awready  (m05_awready),
+        .s_axi_wdata    (m05_wdata),
+        .s_axi_wstrb    (m05_wstrb),
+        .s_axi_wlast    (m05_wlast),
+        .s_axi_wvalid   (m05_wvalid),
+        .s_axi_wready   (m05_wready),
+        .s_axi_bid      (m05_bid),
+        .s_axi_bresp    (m05_bresp),
+        .s_axi_bvalid   (m05_bvalid),
+        .s_axi_bready   (m05_bready),
+        .s_axi_arid     (m05_arid),
+        .s_axi_araddr   (m05_araddr[15:0]),
+        .s_axi_arlen    (m05_arlen),
+        .s_axi_arsize   (m05_arsize),
+        .s_axi_arburst  (m05_arburst),
+        .s_axi_arlock   (m05_arlock),
+        .s_axi_arcache  (m05_arcache),
+        .s_axi_arprot   (m05_arprot),
+        .s_axi_arqos    (m05_arqos),
+        .s_axi_arregion (m05_arregion),
+        .s_axi_arvalid  (m05_arvalid),
+        .s_axi_arready  (m05_arready),
+        .s_axi_rid      (m05_rid),
+        .s_axi_rdata    (m05_rdata),
+        .s_axi_rresp    (m05_rresp),
+        .s_axi_rlast    (m05_rlast),
+        .s_axi_rvalid   (m05_rvalid),
+        .s_axi_rready   (m05_rready)
     );
 
 endmodule

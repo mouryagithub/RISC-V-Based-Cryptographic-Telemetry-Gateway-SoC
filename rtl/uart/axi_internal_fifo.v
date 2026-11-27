@@ -57,7 +57,7 @@ module axi_internal_fifo
   output  wire  [STATUS_WIDTH:0]  status_o; // status flag -> (PORT_EN){load, full, available, space}
 
   /* some parameters */
-  localparam FIFO_THRESHOLD  =  90;     // The amount of empty places that have to remain empty otherwise the FIFO signals full signal
+  localparam FIFO_THRESHOLD  =  1;      // Minimum free entries required before signaling available write space
   localparam NN              =  2'b00;  // neither push nor pull
   localparam NP              =  2'b01;  // pull
   localparam PN              =  2'b10;  // push

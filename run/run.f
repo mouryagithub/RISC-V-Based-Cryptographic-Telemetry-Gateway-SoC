@@ -62,8 +62,9 @@
 ../rtl/interconnect/priority_encoder.v
 ../rtl/interconnect/arbiter.v
 ../rtl/interconnect/axi_interconnect.v
-../rtl/interconnect/axi_interconnect_wrap_2x5.v
+../rtl/interconnect/axi_interconnect_wrap_2x6.v
 ../rtl/interconnect/axi_to_axilite_bridge.v
+../rtl/mem/axi_sram.v
 
 // -----------------------------------------------------------------------------
 // AXI DMA Subsystem
@@ -137,6 +138,8 @@
 ../rtl/interconnect/soc_top.v
 
 // -----------------------------------------------------------------------------
-// Testbench: SystemVerilog DPI-C C Testbench
+// Testbench: SystemVerilog DPI-C C Testbench & Coverage Collector
 // -----------------------------------------------------------------------------
+../tb/soc_cov_pkg.sv
+../tb/soc_cov_collector.sv
 ../tb/tb_soc_c_test.sv

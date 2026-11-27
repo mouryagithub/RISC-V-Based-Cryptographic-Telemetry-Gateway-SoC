@@ -34,20 +34,27 @@ module uart_receiver
     parameter DATA_SIZE   = START_BIT + DATA_UART + PARITY_BIT + STOP_BITS  // max data size
   )
 (
-  input   wire                  clk_i,        // clock
-  input   wire                  rstn_i,       // reset
-  input   wire                  en_i,         // uart enable
-  input   wire                  stop_bits_i,  // uart stop bits <0=1bit>/<1=2bits>
-  input   wire                  parity_bit_i, // uart parity bit enable
-  input   wire  [DIV_SIZE-1:0]  baud_div_i,   // baudrate freq_div value
-  input   wire                  rx_i,         // rx input
-  output  wire  [DATA_UART-1:0] rx_data_o,    // rx data output
-  output  wire                  rx_valid_o    // rx valid output
+  input   wire                  clk_i,            // clock
+  input   wire                  rstn_i,           // reset
+  input   wire                  en_i,             // uart enable
+  input   wire                  stop_bits_i,      // uart stop bits <0=1bit>/<1=2bits>
+  input   wire                  parity_bit_i,     // uart parity bit enable
+  input   wire                  parity_mode_i,    // uart parity mode <0=odd>/<1=even>
+  input   wire  [DIV_SIZE-1:0]  baud_div_i,       // baudrate freq_div value
+  input   wire                  rx_i,             // rx input
+  output  wire  [DATA_UART-1:0] rx_data_o,        // rx data output
+  output  wire                  rx_valid_o,       // rx valid output
+  output  wire                  rx_parity_err_o,  // rx parity error pulse
+  output  wire                  rx_framing_err_o  // rx framing error pulse
 );
 
   /* regs and wires */
   reg   [DATA_UART-1:0] rx_data, rx_data_d;                   // rx data output
   reg                   rx_valid, rx_valid_d;                 // rx valid output
+  reg                   rx_parity_err, rx_parity_err_d;       // rx parity error output
+  reg                   rx_framing_err, rx_framing_err_d;     // rx framing error output
+  reg                   rx_pe_pend, rx_pe_pend_d;             // latched parity error for current frame
+  reg                   rx_fe_pend, rx_fe_pend_d;             // latched framing error for 2-stop-bit mode
   reg   [DIV_SIZE-1:0]  counter_int, counter_int_d;           // sampling counter
   reg   [3:0]           bitcount_int, bitcount_int_d;         // sampling bit count
   reg   [2:0]           rx_trigger_int;                       // metastability rx tripple trigger latching
@@ -61,6 +68,7 @@ module uart_receiver
   localparam  DataUartState   = 6'b001001;  // receive data bits
   localparam  ParityBitState  = 6'b010001;  // receive parity bit
   localparam  StopBitsState   = 6'b100001;  // receive stop bits
+  localparam  WaitIdleState   = 6'b110001;  // wait for line high after framing error/break
   reg [5:0] state, state_d;
 
   /*
@@ -76,7 +84,8 @@ module uart_receiver
       rx_trigger_int[2:1] <= rx_trigger_int[1:0];
     end
   end
-  wire rx = rx_trigger_int[2]; // rx bit
+  wire rx         = rx_trigger_int[2]; // rx bit
+  wire exp_parity = parity_mode_i ? (^rx_data_int) : ~(^rx_data_int); // expected parity bit
 
   /*
     Always description:
@@ -90,6 +99,10 @@ module uart_receiver
     rx_stop_bits_int_d  = rx_stop_bits_int;
     rx_data_d           = rx_data;
     rx_valid_d          = rx_valid;
+    rx_parity_err_d     = rx_parity_err;
+    rx_framing_err_d    = rx_framing_err;
+    rx_pe_pend_d        = rx_pe_pend;
+    rx_fe_pend_d        = rx_fe_pend;
     state_d             = state;
     case(state)
       ResetState: begin     // "reset" fsm state
@@ -99,6 +112,10 @@ module uart_receiver
         rx_stop_bits_int_d  = 1'b0;
         rx_data_d           = {DATA_UART{1'b0}};
         rx_valid_d          = 1'b0;
+        rx_parity_err_d     = 1'b0;
+        rx_framing_err_d    = 1'b0;
+        rx_pe_pend_d        = 1'b0;
+        rx_fe_pend_d        = 1'b0;
         state_d             = IdleState;
       end
       IdleState: begin      // "idle" fsm state
@@ -108,6 +125,10 @@ module uart_receiver
         end
         bitcount_int_d      = 4'b0; // reset bitcount_int
         rx_valid_d          = 1'b0; // no rx_data_int valid
+        rx_parity_err_d     = 1'b0;
+        rx_framing_err_d    = 1'b0;
+        rx_pe_pend_d        = 1'b0;
+        rx_fe_pend_d        = 1'b0;
         rx_stop_bits_int_d  = 1'b0; // reset checked fist stop bit flag
       end
       StartBitState: begin  // "receive start bit" fsm state
@@ -137,6 +158,7 @@ module uart_receiver
       end
       ParityBitState: begin // "receive parity bit" fsm state
         if(counter_int >= baud_div_i-1) begin // freq_div reached
+          rx_pe_pend_d  = (rx != exp_parity);
           counter_int_d = 0;
           state_d       = StopBitsState;
         end
@@ -147,20 +169,25 @@ module uart_receiver
         if(counter_int >= (baud_div_i-1)) begin // freq_div reached
           case(stop_bits_i)
             0: begin    // 1 stop bit required
-              rx_data_d   = rx_data_int;
-              rx_valid_d  = 1'b1;
-              state_d     = IdleState;
+              rx_data_d        = rx_data_int;
+              rx_valid_d       = 1'b1;
+              rx_parity_err_d  = rx_pe_pend;
+              rx_framing_err_d = (rx == 1'b0);
+              state_d          = (rx == 1'b0) ? WaitIdleState : IdleState;
             end
             1: begin    // 2 stop bits required
               case(rx_stop_bits_int)
                 0: begin  // latch another stop bit
                   rx_stop_bits_int_d  = 1'b1;
+                  rx_fe_pend_d        = rx_fe_pend | (rx == 1'b0);
                   counter_int_d       = {DIV_SIZE{1'b0}};
                 end
                 1: begin  // return to idle state
-                  rx_data_d   = rx_data_int;
-                  rx_valid_d  = 1'b1;
-                  state_d     = IdleState;
+                  rx_data_d        = rx_data_int;
+                  rx_valid_d       = 1'b1;
+                  rx_parity_err_d  = rx_pe_pend;
+                  rx_framing_err_d = rx_fe_pend | (rx == 1'b0);
+                  state_d          = (rx == 1'b0) ? WaitIdleState : IdleState;
                 end
               endcase
             end
@@ -169,6 +196,18 @@ module uart_receiver
         else
           counter_int_d = counter_int + 1;
       end
+      WaitIdleState: begin  // wait for rx line to return high so low stop bit does not re-trigger start bit
+        rx_valid_d         = 1'b0;
+        rx_parity_err_d    = 1'b0;
+        rx_framing_err_d   = 1'b0;
+        rx_pe_pend_d       = 1'b0;
+        rx_fe_pend_d       = 1'b0;
+        bitcount_int_d     = 4'b0;
+        rx_stop_bits_int_d = 1'b0;
+        if(rx) begin
+          state_d = IdleState;
+        end
+      end
       default: begin
         counter_int_d       = {DIV_SIZE{1'b0}};
         bitcount_int_d      = 4'b0;
@@ -176,6 +215,10 @@ module uart_receiver
         rx_stop_bits_int_d  = 1'b0;
         rx_data_d           = {DATA_UART{1'b0}};
         rx_valid_d          = 1'b0;
+        rx_parity_err_d     = 1'b0;
+        rx_framing_err_d    = 1'b0;
+        rx_pe_pend_d        = 1'b0;
+        rx_fe_pend_d        = 1'b0;
         state_d             = ResetState;
       end
     endcase
@@ -190,6 +233,10 @@ module uart_receiver
       rx_stop_bits_int  <= 1'b0;
       rx_data           <= {DATA_UART{1'b0}};
       rx_valid          <= 1'b0;
+      rx_parity_err     <= 1'b0;
+      rx_framing_err    <= 1'b0;
+      rx_pe_pend        <= 1'b0;
+      rx_fe_pend        <= 1'b0;
       state             <= ResetState;
     end
     else begin
@@ -199,13 +246,19 @@ module uart_receiver
       rx_stop_bits_int  <= rx_stop_bits_int_d;
       rx_data           <= rx_data_d;
       rx_valid          <= rx_valid_d;
+      rx_parity_err     <= rx_parity_err_d;
+      rx_framing_err    <= rx_framing_err_d;
+      rx_pe_pend        <= rx_pe_pend_d;
+      rx_fe_pend        <= rx_fe_pend_d;
       state             <= state_d;
     end
   end
 
   /* output assignments */
-  assign rx_data_o  = rx_data;
-  assign rx_valid_o = rx_valid;
+  assign rx_data_o        = rx_data;
+  assign rx_valid_o       = rx_valid;
+  assign rx_parity_err_o  = rx_parity_err;
+  assign rx_framing_err_o = rx_framing_err;
 
 endmodule
 
